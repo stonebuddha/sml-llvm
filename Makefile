@@ -1,4 +1,4 @@
-.PHONY: default
+.PHONY: default clean
 
 FILES = \
 llvm_core.sig \
@@ -14,3 +14,6 @@ llvm_sml.o: llvm_sml.c export.h
 
 llvm.exe: llvm.0.o llvm.1.o llvm_sml.o
 	g++ -o llvm.exe llvm.0.o llvm.1.o llvm_sml.o -L/usr/local/lib/mlton/targets/self -lmlton-pic -lgdtoa-pic -lm -lgmp -m64 -L/usr/local/lib -Wl,-search_paths_first -Wl,-headerpad_max_install_names -lLLVMX86Disassembler -lLLVMX86AsmParser -lLLVMX86CodeGen -lLLVMSelectionDAG -lLLVMAsmPrinter -lLLVMDebugInfoCodeView -lLLVMCodeGen -lLLVMScalarOpts -lLLVMInstCombine -lLLVMInstrumentation -lLLVMTransformUtils -lLLVMBitWriter -lLLVMX86Desc -lLLVMMCDisassembler -lLLVMX86Info -lLLVMX86AsmPrinter -lLLVMX86Utils -lLLVMMCJIT -lLLVMExecutionEngine -lLLVMTarget -lLLVMAnalysis -lLLVMProfileData -lLLVMRuntimeDyld -lLLVMObject -lLLVMMCParser -lLLVMBitReader -lLLVMMC -lLLVMCore -lLLVMSupport -lcurses -lz -lm
+
+clean:
+	rm *.o *.exe export.h
