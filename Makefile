@@ -28,15 +28,15 @@ test: llvm.mlb FFI64/llvm.mlb $(FILES)
 	mlton -output test llvm.mlb
 
 llvm32.dylib: llvm_sml.cpp
-	g++ -m32 -dynamiclib `~/Experiments/llvm/build32/bin/llvm-config --cxxflags --ldflags --system-libs --libs core` -o llvm32.dylib llvm_sml.cpp
+	g++ -m32 -dynamiclib `~/Experiments/llvm/build32/bin/llvm-config --cxxflags --ldflags --system-libs --libs core` -o $@ $^
 
 llvm64.dylib: llvm_sml.cpp
-	g++ -dynamiclib `llvm-config --cxxflags --ldflags --system-libs --libs core` -o llvm64.dylib llvm_sml.cpp
+	g++ -dynamiclib `llvm-config --cxxflags --ldflags --system-libs --libs core` -o $@ $^
 
 FFI32/llvm.cm: llvm_sml.h
 	rm -rf FFI32
-	ml-nlffigen -include ../stub32.sml -libhandle Stub.libh -dir FFI32 -cmfile llvm.cm llvm_sml.h
+	ml-nlffigen -include ../stub32.sml -libhandle Stub.libh -dir FFI32 -cmfile llvm.cm $^
 
 FFI64/llvm.mlb: llvm_sml.h
 	rm -rf FFI64
-	mlnlffigen -include ../stub64.sml -libhandle Stub.libh -dir FFI64 -mlbfile llvm.mlb llvm_sml.h
+	mlnlffigen -include ../stub64.sml -libhandle Stub.libh -dir FFI64 -mlbfile llvm.mlb $^
