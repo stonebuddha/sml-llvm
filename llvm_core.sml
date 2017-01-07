@@ -569,11 +569,30 @@ fun dupVPtrArr (arr : C.voidptr array) : C.rw C.voidptr_obj C.ptr =
   end
 fun toVPtrArr (buf : C.rw C.voidptr_obj C.ptr) (len : C.rw C.sint_obj) : C.voidptr array =
   Array.tabulate (Int32.toInt $ C.Get.sint len, fn i =>
-                          let
-                              val loc = C.Ptr.|+| (buf, i)
-                          in
-                              C.Get.voidptr $ C.Ptr.|*| loc
-                          end)
+                                                   let
+                                                       val loc = C.Ptr.|+| (buf, i)
+                                                   in
+                                                       C.Get.voidptr $ C.Ptr.|*| loc
+                                                   end)
+fun dupIntArr (arr : int array) : C.rw C.sint_obj C.ptr =
+  let
+      val buf = C.alloc C.T.sint (Word.fromInt $ Array.length arr)
+      val () = Array.appi (fn (i, num) =>
+                               let
+                                   val loc = C.Ptr.|+| (buf, i)
+                               in
+                                   C.Set.sint (C.Ptr.|*| loc, Int32.fromInt num)
+                               end) arr
+  in
+      buf
+  end
+fun toIntArr (buf : C.rw C.sint_obj C.ptr) (len : C.rw C.sint_obj) : int array =
+  Array.tabulate (Int32.toInt $ C.Get.sint len, fn i =>
+                                                   let
+                                                       val loc = C.Ptr.|+| (buf, i)
+                                                   in
+                                                       Int32.toInt $ C.Get.sint $ C.Ptr.|*| loc
+                                                   end)
 
 fun function_type (ReturnTy : lltype) (ParamTys : lltype array) : lltype =
   let
@@ -1027,28 +1046,53 @@ fun const_in_bounds_gep (ConstantVal : llvalue) (Indices : llvalue array) : llva
       before
       C.free Indices'
   end
-fun const_trunc (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_trunc.f (Val1, Val2)
-fun const_sext (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_sext.f (Val1, Val2)
-fun const_zext (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_zext.f (Val1, Val2)
-fun const_fptrunc (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_fptrunc.f (Val1, Val2)
-fun const_fpext (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_fpext.f (Val1, Val2)
-fun const_uitofp (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_uitofp.f (Val1, Val2)
-fun const_sitofp (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_sitofp.f (Val1, Val2)
-fun const_fptoui (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_fptoui.f (Val1, Val2)
-fun const_fptosi (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_fptosi.f (Val1, Val2)
-fun const_ptrtoint (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_ptrtoint.f (Val1, Val2)
-fun const_inttoptr (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_inttoptr.f (Val1, Val2)
-fun const_bitcast (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_bitcast.f (Val1, Val2)
-fun const_zext_or_bitcast (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_zext_or_bitcast.f (Val1, Val2)
-fun const_sext_or_bitcast (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_sext_or_bitcast.f (Val1, Val2)
-fun const_trunc_or_bitcast (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_trunc_or_bitcast.f (Val1, Val2)
-fun const_pointercast (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_pointercast.f (Val1, Val2)
-fun const_intcast (Val1 : llvalue) (Val2 : llvalue) (IsSigned : bool) : llvalue = F_llvm_const_intcast.f (Val1, Val2, if IsSigned then 1 else 0)
-fun const_fpcast (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_fpcast.f (Val1, Val2)
+fun const_trunc (Val : llvalue) (Ty : lltype) : llvalue = F_llvm_const_trunc.f (Val, Ty)
+fun const_sext (Val : llvalue) (Ty : lltype) : llvalue = F_llvm_const_sext.f (Val, Ty)
+fun const_zext (Val : llvalue) (Ty : lltype) : llvalue = F_llvm_const_zext.f (Val, Ty)
+fun const_fptrunc (Val : llvalue) (Ty : lltype) : llvalue = F_llvm_const_fptrunc.f (Val, Ty)
+fun const_fpext (Val : llvalue) (Ty : lltype) : llvalue = F_llvm_const_fpext.f (Val, Ty)
+fun const_uitofp (Val : llvalue) (Ty : lltype) : llvalue = F_llvm_const_uitofp.f (Val, Ty)
+fun const_sitofp (Val : llvalue) (Ty : lltype) : llvalue = F_llvm_const_sitofp.f (Val, Ty)
+fun const_fptoui (Val : llvalue) (Ty : lltype) : llvalue = F_llvm_const_fptoui.f (Val, Ty)
+fun const_fptosi (Val : llvalue) (Ty : lltype) : llvalue = F_llvm_const_fptosi.f (Val, Ty)
+fun const_ptrtoint (Val : llvalue) (Ty : lltype) : llvalue = F_llvm_const_ptrtoint.f (Val, Ty)
+fun const_inttoptr (Val : llvalue) (Ty : lltype) : llvalue = F_llvm_const_inttoptr.f (Val, Ty)
+fun const_bitcast (Val : llvalue) (Ty : lltype) : llvalue = F_llvm_const_bitcast.f (Val, Ty)
+fun const_zext_or_bitcast (Val : llvalue) (Ty : lltype) : llvalue = F_llvm_const_zext_or_bitcast.f (Val, Ty)
+fun const_sext_or_bitcast (Val : llvalue) (Ty : lltype) : llvalue = F_llvm_const_sext_or_bitcast.f (Val, Ty)
+fun const_trunc_or_bitcast (Val : llvalue) (Ty : lltype) : llvalue = F_llvm_const_trunc_or_bitcast.f (Val, Ty)
+fun const_pointercast (Val : llvalue) (Ty : lltype) : llvalue = F_llvm_const_pointercast.f (Val, Ty)
+fun const_intcast (CV : llvalue) (T : lltype) (IsSigned : bool) : llvalue = F_llvm_const_intcast.f (CV, T, if IsSigned then 1 else 0)
+fun const_fpcast (Val : llvalue) (Ty : lltype) : llvalue = F_llvm_const_fpcast.f (Val, Ty)
 fun const_select (Val1 : llvalue) (Val2 : llvalue) (Val3 : llvalue) : llvalue = F_llvm_const_select.f (Val1, Val2, Val3)
 fun const_extractelement (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_extractelement.f (Val1, Val2)
 fun const_insertelement (Val1 : llvalue) (Val2 : llvalue) (Val3 : llvalue) : llvalue = F_llvm_const_insertelement.f (Val1, Val2, Val3)
 fun const_shufflevector (Val1 : llvalue) (Val2 : llvalue) (Val3 : llvalue) : llvalue = F_llvm_const_shufflevector.f (Val1, Val2, Val3)
+fun const_extractvalue (Aggregate : llvalue) (Indices : int array) : llvalue =
+  let
+      val Indices' = dupIntArr Indices
+  in
+      F_llvm_const_extractvalue.f (Aggregate, Indices', Int32.fromInt $ Array.length Indices)
+      before
+      C.free Indices'
+  end
+fun const_insertvalue (Aggregate : llvalue) (Val : llvalue) (Indices : int array) : llvalue =
+  let
+      val Indices' = dupIntArr Indices
+  in
+      F_llvm_const_insertvalue.f (Aggregate, Val, Indices', Int32.fromInt $ Array.length Indices)
+      before
+      C.free Indices'
+  end
+fun const_inline_asm (Ty : lltype) (Asm : string) (Constraints : string) (HasSideEffects : bool) (IsAlignStack : bool) : llvalue =
+  let
+      val Asm' = ZString.dupML Asm
+      val Constraints' = ZString.dupML Constraints
+  in
+      F_llvm_const_inline_asm.f (Ty, Asm', Constraints', if HasSideEffects then 1 else 0, if IsAlignStack then 1 else 0)
+      before
+      (C.free Asm'; C.free Constraints')
+  end
 fun block_address (Val : llvalue) (BB : llbasicblock) : llvalue = F_llvm_block_address.f (Val, BB)
 
 (*--... Operations on global variables, functions, and aliases (globals) ...--*)
