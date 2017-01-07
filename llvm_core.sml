@@ -1,4 +1,4 @@
-structure LlvmCore :> LLVM_CORE =
+structure LlvmCore (*:> LLVM_CORE*) =
 struct
 
 type llcontext = C.voidptr
@@ -9,7 +9,7 @@ type lluse = C.voidptr
 type llbasicblock = C.voidptr
 type llbuilder = C.voidptr
 type llmemorybuffer = C.voidptr
-type llmdkind = int
+type llmdkind = Int32.int
 
 structure TypeKind =
 struct

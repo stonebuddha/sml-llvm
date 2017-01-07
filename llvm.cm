@@ -4,4 +4,7 @@ Group is
   $c/c.cm
   FFI32/llvm.cm
 
+  llvm_core.sig
+  llvm_core.sml
+
   test.sml

@@ -7,8 +7,14 @@
 /*===-- Utils -------------------------------------------------------------===*/
 
 static const char *copy_string(const char *src) {
-  char *des = (char *) malloc(sizeof(char) * (strlen(src) + 1));
+  unsigned Len;
+  char *des;
+
+  Len = strlen(src);
+  des = (char *) malloc(sizeof(char) * (Len + 1));
   strcpy(des, src);
+  des[Len] = '\0';
+
   return des;
 }
 
