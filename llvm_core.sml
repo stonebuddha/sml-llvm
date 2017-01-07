@@ -977,8 +977,40 @@ fun string_of_const (Val : llvalue) : string option =
 fun const_element (Val : llvalue) (N : int) : llvalue = F_llvm_const_element.f (Val, Int32.fromInt N)
 
 (*--... Constant expressions ...............................................--*)
+fun align_of (Ty : lltype) : llvalue = F_llvm_align_of.f Ty
+fun size_of (Ty : lltype) : llvalue = F_llvm_size_of.f Ty
+fun const_neg (Val : llvalue) : llvalue = F_llvm_const_neg.f Val
+fun const_nsw_neg (Val : llvalue) : llvalue = F_llvm_const_nsw_neg.f Val
+fun const_nuw_neg (Val : llvalue) : llvalue = F_llvm_const_nuw_neg.f Val
+fun const_fneg (Val : llvalue) : llvalue = F_llvm_const_fneg.f Val
+fun const_not (Val : llvalue) : llvalue = F_llvm_const_not.f Val
+fun const_add (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_add.f (Val1, Val2)
+fun const_nsw_add (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_nsw_add.f (Val1, Val2)
+fun const_nuw_add (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_nuw_add.f (Val1, Val2)
+fun const_fadd (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_fadd.f (Val1, Val2)
+fun const_sub (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_sub.f (Val1, Val2)
+fun const_nsw_sub (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_nsw_sub.f (Val1, Val2)
+fun const_nuw_sub (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_nuw_sub.f (Val1, Val2)
+fun const_fsub (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_fsub.f (Val1, Val2)
+fun const_mul (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_mul.f (Val1, Val2)
+fun const_nsw_mul (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_nsw_mul.f (Val1, Val2)
+fun const_nuw_mul (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_nuw_mul.f (Val1, Val2)
+fun const_fmul (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_fmul.f (Val1, Val2)
+fun const_udiv (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_udiv.f (Val1, Val2)
+fun const_sdiv (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_sdiv.f (Val1, Val2)
+fun const_exact_sdiv (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_exact_sdiv.f (Val1, Val2)
+fun const_fdiv (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_fdiv.f (Val1, Val2)
+fun const_urem (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_urem.f (Val1, Val2)
+fun const_srem (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_srem.f (Val1, Val2)
+fun const_frem (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_frem.f (Val1, Val2)
+fun const_and (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_and.f (Val1, Val2)
+fun const_or (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_or.f (Val1, Val2)
+fun const_xor (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_xor.f (Val1, Val2)
 fun const_icmp (Pred : Icmp.t) (LHSConstant : llvalue) (RHSConstant : llvalue) : llvalue = F_llvm_const_icmp.f (Int32.fromInt $ Icmp.toInt Pred, LHSConstant, RHSConstant)
 fun const_fcmp (Pred : Fcmp.t) (LHSConstant : llvalue) (RHSConstant : llvalue) : llvalue = F_llvm_const_fcmp.f (Int32.fromInt $ Fcmp.toInt Pred, LHSConstant, RHSConstant)
+fun const_shl (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_shl.f (Val1, Val2)
+fun const_lshr (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_lshr.f (Val1, Val2)
+fun const_ashr (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_ashr.f (Val1, Val2)
 fun const_gep (ConstantVal : llvalue) (Indices : llvalue array) : llvalue =
   let
       val Indices' = dupVPtrArr Indices
@@ -987,6 +1019,37 @@ fun const_gep (ConstantVal : llvalue) (Indices : llvalue array) : llvalue =
       before
       C.free Indices'
   end
+fun const_in_bounds_gep (ConstantVal : llvalue) (Indices : llvalue array) : llvalue =
+  let
+      val Indices' = dupVPtrArr Indices
+  in
+      F_llvm_const_in_bounds_gep.f (ConstantVal, Indices', Int32.fromInt $ Array.length Indices)
+      before
+      C.free Indices'
+  end
+fun const_trunc (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_trunc.f (Val1, Val2)
+fun const_sext (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_sext.f (Val1, Val2)
+fun const_zext (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_zext.f (Val1, Val2)
+fun const_fptrunc (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_fptrunc.f (Val1, Val2)
+fun const_fpext (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_fpext.f (Val1, Val2)
+fun const_uitofp (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_uitofp.f (Val1, Val2)
+fun const_sitofp (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_sitofp.f (Val1, Val2)
+fun const_fptoui (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_fptoui.f (Val1, Val2)
+fun const_fptosi (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_fptosi.f (Val1, Val2)
+fun const_ptrtoint (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_ptrtoint.f (Val1, Val2)
+fun const_inttoptr (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_inttoptr.f (Val1, Val2)
+fun const_bitcast (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_bitcast.f (Val1, Val2)
+fun const_zext_or_bitcast (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_zext_or_bitcast.f (Val1, Val2)
+fun const_sext_or_bitcast (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_sext_or_bitcast.f (Val1, Val2)
+fun const_trunc_or_bitcast (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_trunc_or_bitcast.f (Val1, Val2)
+fun const_pointercast (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_pointercast.f (Val1, Val2)
+fun const_intcast (Val1 : llvalue) (Val2 : llvalue) (IsSigned : bool) : llvalue = F_llvm_const_intcast.f (Val1, Val2, if IsSigned then 1 else 0)
+fun const_fpcast (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_fpcast.f (Val1, Val2)
+fun const_select (Val1 : llvalue) (Val2 : llvalue) (Val3 : llvalue) : llvalue = F_llvm_const_select.f (Val1, Val2, Val3)
+fun const_extractelement (Val1 : llvalue) (Val2 : llvalue) : llvalue = F_llvm_const_extractelement.f (Val1, Val2)
+fun const_insertelement (Val1 : llvalue) (Val2 : llvalue) (Val3 : llvalue) : llvalue = F_llvm_const_insertelement.f (Val1, Val2, Val3)
+fun const_shufflevector (Val1 : llvalue) (Val2 : llvalue) (Val3 : llvalue) : llvalue = F_llvm_const_shufflevector.f (Val1, Val2, Val3)
+fun block_address (Val : llvalue) (BB : llbasicblock) : llvalue = F_llvm_block_address.f (Val, BB)
 
 (*--... Operations on global variables, functions, and aliases (globals) ...--*)
 
