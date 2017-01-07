@@ -572,12 +572,12 @@ fun is_var_arg (FunctionTy : lltype) : bool =
 fun return_type (FunctionTy : lltype) : lltype = F_llvm_return_type.f FunctionTy
 fun param_types (FunctionTy : lltype) : lltype array =
   let
-      val len = C.new C.T.sint
-      val buf = F_llvm_param_types.f (FunctionTy, C.Ptr.|&| len)
+      val Len = C.new C.T.sint
+      val Buf = F_llvm_param_types.f (FunctionTy, C.Ptr.|&| Len)
   in
-      toVPtrArr buf len
+      toVPtrArr Buf Len
       before
-      (C.free buf; C.free (C.Ptr.|&| len))
+      (C.free Buf; C.free (C.Ptr.|&| Len))
   end
 
 (*--... Operations on struct types .........................................--*)
@@ -625,12 +625,12 @@ fun struct_set_body (StructTy : lltype) (ElemTys : lltype array) (Packed : bool)
   end
 fun struct_element_types (StructTy : lltype) : lltype array =
   let
-      val len = C.new C.T.sint
-      val buf = F_llvm_struct_element_types.f (StructTy, C.Ptr.|&| len)
+      val Len = C.new C.T.sint
+      val Buf = F_llvm_struct_element_types.f (StructTy, C.Ptr.|&| Len)
   in
-      toVPtrArr buf len
+      toVPtrArr Buf Len
       before
-      (C.free buf; C.free (C.Ptr.|&| len))
+      (C.free Buf; C.free (C.Ptr.|&| Len))
   end
 fun is_packed (StructTy : lltype) : bool =
   case F_llvm_is_packed.f StructTy of
@@ -643,295 +643,365 @@ fun is_opaque (StructTy : lltype) : bool =
     | 1 => true
     | _ => raise (Fail "is_opaque")
 
-(* (*--... Operations on pointer, vector, and array types .....................--*) *)
-(* val array_type = _import "llvm_array_type" : lltype * int -> lltype; *)
-(* val pointer_type = _import "llvm_pointer_type" : lltype -> lltype; *)
-(* val qualified_pointer_type = _import "llvm_qualified_pointer_type" : lltype * int -> lltype; *)
-(* val vector_type = _import "llvm_vector_type" : lltype * int -> lltype; *)
+(*--... Operations on pointer, vector, and array types .....................--*)
+fun array_type (ElemTy : lltype) (ElemCount : int) : lltype = F_llvm_array_type.f (ElemTy, Int32.fromInt ElemCount)
+fun pointer_type (ElemTy : lltype) : lltype = F_llvm_pointer_type.f ElemTy
+fun qualified_pointer_type (ElemTy : lltype) (AddrSpace : int) : lltype = F_llvm_qualified_pointer_type.f (ElemTy, Int32.fromInt AddrSpace)
+fun vector_type (ElemTy : lltype) (ElemCount : int) : lltype = F_llvm_vector_type.f (ElemTy, Int32.fromInt ElemCount)
 
-(* val element_type = _import "LLVMGetElementType" : lltype -> lltype; *)
-(* val array_length = _import "llvm_array_length" : lltype -> int; *)
-(* val address_space = _import "llvm_address_space" : lltype -> int; *)
-(* val vector_size = _import "llvm_vector_size" : lltype -> int; *)
+fun element_type (Ty : lltype) : lltype = F_llvm_element_type.f Ty
+fun array_length (ArrayTy : lltype) : int = Int32.toInt $ F_llvm_array_length.f ArrayTy
+fun address_space (PtrTy : lltype) : int = Int32.toInt $ F_llvm_address_space.f PtrTy
+fun vector_size (VectorTy : lltype) : int = Int32.toInt $ F_llvm_vector_size.f VectorTy
 
-(* (*--... Operations on other types ..........................................--*) *)
-(* val void_type = _import "llvm_void_type" : llcontext -> lltype; *)
-(* val label_type = _import "llvm_label_type" : llcontext -> lltype; *)
-(* val x86_mmx_type = _import "llvm_x86_mmx_type" : llcontext -> lltype; *)
-(* val type_by_name = *)
-(*     let *)
-(*         val f = _import "llvm_type_by_name" : llmodule * string * bool ref -> lltype; *)
-(*     in *)
-(*         fn M => fn Name => *)
-(*            let *)
-(*                val is_null = ref false *)
-(*                val res = f (M, Name, is_null) *)
-(*            in *)
-(*                if !is_null then NONE else SOME res *)
-(*            end *)
-(*     end *)
+(*--... Operations on other types ..........................................--*)
+fun void_type (C : llcontext) : lltype = F_llvm_void_type.f C
+fun label_type (C : llcontext) : lltype = F_llvm_label_type.f C
+fun x86_mmx_type (C : llcontext) : lltype = F_llvm_x86_mmx_type.f C
+fun type_by_name (M : llmodule) (Name : string) : lltype option =
+  let
+      val Name' = ZString.dupML Name
+      val Res = F_llvm_type_by_name.f (M, Name') before C.free Name'
+  in
+      if C.Ptr.isNull' Res then NONE
+      else SOME Res
+  end
 
-(* (*===-- Values ------------------------------------------------------------===*) *)
-(* val classify_value = *)
-(*     let *)
-(*         val f = _import "llvm_classify_value" : llvalue -> int; *)
-(*     in *)
-(*         fn Val => ValueKind.fromInt (f Val) *)
-(*     end *)
-(* val type_of = _import "llvm_type_of" : llvalue -> lltype; *)
-(* val value_name = _import "llvm_value_name" : llvalue -> string; *)
-(* val set_value_name = _import "llvm_set_value_name" : string * llvalue -> unit; *)
-(* val dump_value = _import "llvm_dump_value" : llvalue -> unit; *)
-(* val string_of_llvalue = _import "llvm_string_of_llvalue" : llvalue -> string; *)
-(* val replace_all_uses_with = _import "llvm_replace_all_uses_with" : llvalue * llvalue -> unit; *)
+(*===-- Values ------------------------------------------------------------===*)
+fun classify_value (Val : llvalue) : ValueKind.t = ValueKind.fromInt $ Int32.toInt $ F_llvm_classify_value.f Val
+fun type_of (Val : llvalue) : lltype = F_llvm_type_of.f Val
+fun value_name (Val : llvalue) : string =
+  let
+      val Name = F_llvm_value_name.f Val
+  in
+      ZString.toML Name
+      before
+      C.free Name
+  end
+fun set_value_name (Name : string) (Val : llvalue) : unit =
+  let
+      val Name' = ZString.dupML Name
+  in
+      F_llvm_set_value_name.f (Name', Val)
+      before
+      C.free Name'
+  end
+fun dump_value (Val : llvalue) : unit = F_llvm_dump_value.f Val
+fun string_of_llvalue (Val : llvalue) : string =
+  let
+      val S = F_llvm_string_of_llvalue.f Val
+  in
+      ZString.toML S
+      before
+      C.free S
+  end
+fun replace_all_uses_with (OldVal : llvalue) (NewVal : llvalue) : unit = F_llvm_replace_all_uses_with.f (OldVal, NewVal)
 
-(* (*--... Operations on uses .................................................--*) *)
-(* val use_begin = *)
-(*     let *)
-(*         val f = _import "llvm_use_begin" : llvalue * bool ref -> lluse; *)
-(*     in *)
-(*         fn Val => *)
-(*            let *)
-(*                val is_null = ref false *)
-(*                val res = f (Val, is_null) *)
-(*            in *)
-(*                if !is_null then NONE else SOME res *)
-(*            end *)
-(*     end *)
-(* val use_succ = *)
-(*     let *)
-(*         val f = _import "llvm_use_succ" : lluse * bool ref -> lluse; *)
-(*     in *)
-(*         fn U => *)
-(*            let *)
-(*                val is_null = ref false *)
-(*                val res = f (U, is_null) *)
-(*            in *)
-(*                if !is_null then NONE else SOME res *)
-(*            end *)
-(*     end *)
-(* val user = _import "llvm_user" : lluse -> llvalue; *)
-(* val used_value = _import "llvm_used_value" : lluse -> llvalue; *)
+(*--... Operations on uses .................................................--*)
+fun use_begin (Val : llvalue) : lluse option =
+  let
+      val Res = F_llvm_use_begin.f Val
+  in
+      if C.Ptr.isNull' Res then NONE
+      else SOME Res
+  end
+fun use_succ (U : lluse) : lluse option =
+  let
+      val Res = F_llvm_use_succ.f U
+  in
+      if C.Ptr.isNull' Res then NONE
+      else SOME Res
+  end
+fun user (U : lluse) : llvalue = F_llvm_user.f U
+fun used_value (U : lluse) : llvalue = F_llvm_used_value.f U
 
-(* fun iter_uses f v = *)
-(*   let *)
-(*       fun aux NONE = () *)
-(*         | aux (SOME u) = (f u; aux (use_succ u)) *)
-(*   in *)
-(*       aux (use_begin v) *)
-(*   end *)
+fun iter_uses f v =
+  let
+      fun aux NONE = ()
+        | aux (SOME u) = (f u; aux (use_succ u))
+  in
+      aux (use_begin v)
+  end
 
-(* fun fold_left_uses f init v = *)
-(*   let *)
-(*       fun aux init NONE = init *)
-(*         | aux init (SOME u) = aux (f init u) (use_succ u) *)
-(*   in *)
-(*       aux init (use_begin v) *)
-(*   end *)
+fun fold_left_uses f init v =
+  let
+      fun aux init NONE = init
+        | aux init (SOME u) = aux (f init u) (use_succ u)
+  in
+      aux init (use_begin v)
+  end
 
-(* fun fold_right_uses f v init = *)
-(*   let *)
-(*       fun aux NONE init = init *)
-(*         | aux (SOME u) init = f u (aux (use_succ u) init) *)
-(*   in *)
-(*       aux (use_begin v) init *)
-(*   end *)
+fun fold_right_uses f v init =
+  let
+      fun aux NONE init = init
+        | aux (SOME u) init = f u (aux (use_succ u) init)
+  in
+      aux (use_begin v) init
+  end
 
-(* (*--... Operations on users ................................................--*) *)
-(* val operand = _import "llvm_operand" : llvalue * int -> llvalue; *)
-(* val operand_use = _import "llvm_operand_use" : llvalue * int -> lluse; *)
-(* val set_operand = _import "llvm_set_operand" : llvalue * int * llvalue -> unit; *)
-(* val num_operands = _import "llvm_num_operands" : llvalue -> int; *)
+(*--... Operations on users ................................................--*)
+fun operand (Val : llvalue) (I : int) : llvalue = F_llvm_operand.f (Val, Int32.fromInt I)
+fun operand_use (Val : llvalue) (I : int) : lluse = F_llvm_operand_use.f (Val, Int32.fromInt I)
+fun set_operand (Val1 : llvalue) (I : int) (Val2 : llvalue) : unit = F_llvm_set_operand.f (Val1, Int32.fromInt I, Val2)
+fun num_operands (Val : llvalue) : int = Int32.toInt $ F_llvm_num_operands.f Val
 
-(* (*--... Operations on constants of (mostly) any type .......................--*) *)
-(* val is_constant = _import "llvm_is_constant" : llvalue -> bool; *)
-(* val const_null = _import "LLVMConstNull" : lltype -> llvalue; *)
-(* val const_all_ones = _import "LLVMConstAllOnes" : lltype -> llvalue; *)
-(* val const_pointer_null = _import "LLVMConstPointerNull" : lltype -> llvalue; *)
-(* val undef = _import "LLVMGetUndef" : lltype -> llvalue; *)
-(* val is_null = _import "llvm_is_null" : llvalue -> bool; *)
-(* val is_undef = _import "llvm_is_undef" : llvalue -> bool; *)
-(* val constexpr_opcode = *)
-(*     let *)
-(*         val f = _import "llvm_constexpr_get_opcode" : llvalue -> int; *)
-(*     in *)
-(*         fn Val => Opcode.fromInt (f Val) *)
-(*     end *)
+(*--... Operations on constants of (mostly) any type .......................--*)
+fun is_constant (Val : llvalue) : bool =
+  case F_llvm_is_constant.f Val of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "is_constant")
+fun const_null (Ty : lltype) : llvalue = F_llvm_const_null.f Ty
+fun const_all_ones (Ty : lltype) : llvalue = F_llvm_const_all_ones.f Ty
+fun const_pointer_null (Ty : lltype) : llvalue = F_llvm_const_pointer_null.f Ty
+fun undef (Ty : lltype) : llvalue = F_llvm_undef.f Ty
+fun is_null (Val : llvalue) : bool =
+  case F_llvm_is_null.f Val of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "is_null")
+fun is_undef (Val : llvalue) : bool =
+  case F_llvm_is_undef.f Val of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "is_undef")
+fun constexpr_opcode (Val : llvalue) : Opcode.t = Opcode.fromInt $ Int32.toInt $ F_llvm_constexpr_get_opcode.f Val
 
-(* (*--... Operations on instructions .........................................--*) *)
-(* val has_metadata = _import "llvm_has_metadata" : llvalue -> bool; *)
-(* val metadata = *)
-(*     let *)
-(*         val f = _import "llvm_metadata" : llvalue * llmdkind * bool ref -> llvalue; *)
-(*     in *)
-(*         fn Val => fn MDKindId => *)
-(*            let *)
-(*                val is_null = ref false *)
-(*                val res = f (Val, MDKindId, is_null) *)
-(*            in *)
-(*                if !is_null then NONE else SOME res *)
-(*            end *)
-(*     end *)
-(* val set_metadata = _import "llvm_set_metadata" : llvalue * llmdkind * llvalue -> unit; *)
-(* val clear_metadata = _import "llvm_clear_metadata" : llvalue * llmdkind -> unit; *)
+(*--... Operations on instructions .........................................--*)
+fun has_metadata (Val : llvalue) : bool =
+  case F_llvm_has_metadata.f Val of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "has_metadata")
+fun metadata (Val : llvalue) (MDKindId : int) : llvalue option =
+  let
+      val Res = F_llvm_metadata.f (Val, Int32.fromInt MDKindId)
+  in
+      if C.Ptr.isNull' Res then NONE
+      else SOME Res
+  end
+fun set_metadata (Val : llvalue) (MDKindId : int) (MD : llvalue) : unit = F_llvm_set_metadata.f (Val, Int32.fromInt MDKindId, MD)
+fun clear_metadata (Val : llvalue) (MDKindId : int) : unit = F_llvm_clear_metadata.f (Val, Int32.fromInt MDKindId)
 
 (* (*--... Operations on metadata .......,.....................................--*) *)
-(* val mdstring = _import "llvm_mdstring" : llcontext * string -> llvalue; *)
-(* val mdnode = *)
-(*     let *)
-(*         val f = _import "llvm_mdnode" : llcontext * llvalue array * int -> llvalue; *)
-(*     in *)
-(*         fn C => fn ElemVals => f (C, ElemVals, Array.length ElemVals) *)
-(*     end *)
-(* val mdnull = _import "llvm_mdnull" : llcontext -> llvalue; *)
-(* val get_mdstring = *)
-(*     let *)
-(*         val f = _import "llvm_get_mdstring" : llvalue * bool ref -> string; *)
-(*     in *)
-(*         fn Val => *)
-(*            let *)
-(*                val is_null = ref false *)
-(*                val res = f (Val, is_null) *)
-(*            in *)
-(*                if !is_null then NONE else SOME res *)
-(*            end *)
-(*     end *)
-(* val get_mdnode_operands = _import "llvm_get_mdnode_operands" : llvalue -> llvalue array; *)
-(* val get_named_metadata = _import "llvm_get_namedmd" : llmodule * string -> llvalue array; *)
-(* val add_named_metadata_operand = _import "llvm_append_namedmd" : llmodule * string * llvalue -> unit; *)
+fun mdstring (C : llcontext) (S : string) : llvalue =
+  let
+      val S' = ZString.dupML S
+  in
+      F_llvm_mdstring.f (C, S')
+      before
+      C.free S'
+  end
+fun mdnode (C : llcontext) (ElemVals : llvalue array) : llvalue =
+  let
+      val ElemVals' = dupVPtrArr ElemVals
+  in
+      F_llvm_mdnode.f (C, ElemVals', Int32.fromInt $ Array.length ElemVals)
+      before
+      C.free ElemVals'
+  end
+fun mdnull (C : llcontext) : llvalue = F_llvm_mdnull.f C
+fun get_mdstring (Val : llvalue) : string option =
+  let
+      val S = F_llvm_get_mdstring.f Val
+  in
+      if C.Ptr.isNull S then NONE
+      else
+          SOME (ZString.toML S)
+          before
+          C.free S
+  end
+fun get_mdnode_operands (Val : llvalue) : llvalue array =
+  let
+      val Len = C.new C.T.sint
+      val Buf = F_llvm_get_mdnode_operands.f (Val, C.Ptr.|&| Len)
+  in
+      toVPtrArr Buf Len
+      before
+      (C.free Buf; C.free (C.Ptr.|&| Len))
+  end
+fun get_named_metadata (Val : llvalue) (Name : string) : llvalue array =
+  let
+      val Name' = ZString.dupML Name
+      val Len = C.new C.T.sint
+      val Buf = F_llvm_get_namedmd.f (Val, Name', C.Ptr.|&| Len)
+  in
+      toVPtrArr Buf Len
+      before
+      (C.free Name'; C.free Buf; C.free (C.Ptr.|&| Len))
+  end
+fun add_named_metadata_operand (M : llmodule) (Name : string) (Val : llvalue) : unit =
+  let
+      val Name' = ZString.dupML Name
+  in
+      F_llvm_append_namedmd.f (M, Name', Val)
+      before
+      C.free Name'
+  end
 
-(* (*--... Operations on scalar constants .....................................--*) *)
-(* val const_int = _import "llvm_const_int" : lltype * int -> llvalue; *)
-(* val const_of_int64 = _import "llvm_const_of_int64" : lltype * Int64.int * bool -> llvalue; *)
-(* val int64_of_const = *)
-(*     let *)
-(*         val f = _import "llvm_int64_of_const" : llvalue * bool ref -> Int64.int; *)
-(*     in *)
-(*         fn Val => *)
-(*            let *)
-(*                val is_null = ref false *)
-(*                val res = f (Val, is_null) *)
-(*            in *)
-(*                if !is_null then NONE else SOME res *)
-(*            end *)
-(*     end *)
-(* val const_int_of_string = _import "llvm_const_int_of_string" : lltype * string * int -> llvalue; *)
-(* val const_float = _import "llvm_const_float" : lltype * real -> llvalue; *)
-(* val float_of_const = *)
-(*     let *)
-(*         val f = _import "llvm_float_of_const" : llvalue * bool ref -> real; *)
-(*     in *)
-(*         fn Val => *)
-(*            let *)
-(*                val is_null = ref false *)
-(*                val res = f (Val, is_null) *)
-(*            in *)
-(*                if !is_null then NONE else SOME res *)
-(*            end *)
-(*     end *)
-(* val const_float_of_string = _import "llvm_const_float_of_string" : lltype * string -> llvalue; *)
+(*--... Operations on scalar constants .....................................--*)
+fun const_int (IntTy : lltype) (N : int) : llvalue = F_llvm_const_int.f (IntTy, Int32.fromInt N)
+(* FIXME: this can not compile under SML/NJ *)
+(* fun const_of_int64 (IntTy : lltype) (N : Int64.int) (SExt : bool) : llvalue = F_llvm_const_of_int64.f (IntTy, N, if SExt then 1 else 0) *)
+fun int64_of_const (Val : llvalue) : Int64.int option =
+  let
+      val Res = F_llvm_int64_of_const.f Val
+  in
+      if C.Ptr.isNull Res then NONE
+      else
+          SOME (C.Get.slonglong $ C.Ptr.|*| Res)
+          before
+          C.free Res
+  end
+fun const_int_of_string (IntTy : lltype) (S : string) (Radix : int) : llvalue =
+  let
+      val S' = ZString.dupML S
+  in
+      F_llvm_const_int_of_string.f (IntTy, S', Int32.fromInt Radix)
+      before
+      C.free S'
+  end
+fun const_float (RealTy : lltype) (N : real) : llvalue = F_llvm_const_float.f (RealTy, N)
+fun float_of_const (Val : llvalue) : real option =
+  let
+      val Res = F_llvm_float_of_const.f Val
+  in
+      if C.Ptr.isNull Res then NONE
+      else
+          SOME (C.Get.double $ C.Ptr.|*| Res)
+          before
+          C.free Res
+  end
+fun const_float_of_string (RealTy : lltype) (S : string) : llvalue =
+  let
+      val S' = ZString.dupML S
+  in
+      F_llvm_const_float_of_string.f (RealTy, S')
+      before
+      C.free S'
+  end
 
-(* (*--... Operations on composite constants ..................................--*) *)
-(* val const_string = _import "llvm_const_string" : llcontext * string -> llvalue; *)
-(* val const_stringz = _import "llvm_const_stringz" : llcontext * string -> llvalue; *)
-(* val const_array = *)
-(*     let *)
-(*         val f = _import "llvm_const_array" : lltype * llvalue array * int -> llvalue; *)
-(*     in *)
-(*         fn C => fn ElemVals => f (C, ElemVals, Array.length ElemVals) *)
-(*     end *)
-(* val const_struct = *)
-(*     let *)
-(*         val f = _import "llvm_const_struct" : llcontext * llvalue array * int -> llvalue; *)
-(*     in *)
-(*         fn C => fn ElemVals => f (C, ElemVals, Array.length ElemVals) *)
-(*     end *)
-(* val const_named_struct = *)
-(*     let *)
-(*         val f = _import "llvm_const_named_struct" : lltype * llvalue array * int -> llvalue; *)
-(*     in *)
-(*         fn Ty => fn ElemVals => f (Ty, ElemVals, Array.length ElemVals) *)
-(*     end *)
-(* val const_packed_struct = *)
-(*     let *)
-(*         val f = _import "llvm_packed_struct" : llcontext * llvalue array * int -> llvalue; *)
-(*     in *)
-(*         fn C => fn ElemVals => f (C, ElemVals, Array.length ElemVals) *)
-(*     end *)
-(* val const_vector = *)
-(*     let *)
-(*         val f = _import "llvm_const_vector" : llvalue array * int -> llvalue; *)
-(*     in *)
-(*         fn ElemVals => f (ElemVals, Array.length ElemVals) *)
-(*     end *)
-(* val string_of_const = *)
-(*     let *)
-(*         val f = _import "llvm_string_of_const" : llvalue * bool ref -> string; *)
-(*     in *)
-(*         fn Val => *)
-(*            let *)
-(*                val is_null = ref false *)
-(*                val res = f (Val, is_null) *)
-(*            in *)
-(*                if !is_null then NONE else SOME res *)
-(*            end *)
-(*     end *)
-(* val const_element = _import "llvm_const_element" : llvalue * int -> llvalue; *)
+(*--... Operations on composite constants ..................................--*)
+fun const_string (C : llcontext) (S : string) : llvalue =
+  let
+      val S' = ZString.dupML S
+  in
+      F_llvm_const_string.f (C, S')
+      before
+      C.free S'
+  end
+fun const_stringz (C : llcontext) (S : string) : llvalue =
+  let
+      val S' = ZString.dupML S
+  in
+      F_llvm_const_stringz.f (C, S')
+  end
+fun const_array (ElemTy : lltype) (ElemVals : llvalue array) : llvalue =
+  let
+      val ElemVals' = dupVPtrArr ElemVals
+  in
+      F_llvm_const_array.f (ElemTy, ElemVals', Int32.fromInt $ Array.length ElemVals)
+      before
+      C.free ElemVals'
+  end
+fun const_struct (C : llcontext) (ElemVals : llvalue array) : llvalue =
+  let
+      val ElemVals' = dupVPtrArr ElemVals
+  in
+      F_llvm_const_struct.f (C, ElemVals', Int32.fromInt $ Array.length ElemVals)
+      before
+      C.free ElemVals'
+  end
+fun const_named_struct (StructTy : lltype) (ElemVals : llvalue array) : llvalue =
+  let
+      val ElemVals' = dupVPtrArr ElemVals
+  in
+      F_llvm_const_named_struct.f (StructTy, ElemVals', Int32.fromInt $ Array.length ElemVals)
+      before
+      C.free ElemVals'
+  end
+fun const_packed_struct (C : llcontext) (ElemVals : llvalue array) : llvalue =
+  let
+      val ElemVals' = dupVPtrArr ElemVals
+  in
+      F_llvm_const_packed_struct.f (C, ElemVals', Int32.fromInt $ Array.length ElemVals)
+      before
+      C.free ElemVals'
+  end
+fun const_vector (ElemVals : llvalue array) : llvalue =
+  let
+      val ElemVals' = dupVPtrArr ElemVals
+  in
+      F_llvm_const_vector.f (ElemVals', Int32.fromInt $ Array.length ElemVals)
+      before
+      C.free ElemVals'
+  end
+fun string_of_const (Val : llvalue) : string option =
+  let
+      val S = F_llvm_string_of_const.f Val
+  in
+      if C.Ptr.isNull S then NONE
+      else
+          SOME (ZString.toML S)
+          before
+          C.free S
+  end
+fun const_element (Val : llvalue) (N : int) : llvalue = F_llvm_const_element.f (Val, Int32.fromInt N)
 
-(* (*--... Constant expressions ...............................................--*) *)
+(*--... Constant expressions ...............................................--*)
 
-(* (*--... Operations on global variables, functions, and aliases (globals) ...--*) *)
+(*--... Operations on global variables, functions, and aliases (globals) ...--*)
 
-(* (*--... Operations on global variables .....................................--*) *)
+(*--... Operations on global variables .....................................--*)
 
-(* (*--... Operations on aliases ..............................................--*) *)
+(*--... Operations on aliases ..............................................--*)
 
-(* (*--... Operations on functions ............................................--*) *)
+(*--... Operations on functions ............................................--*)
 
-(* (*--... Operations on params ...............................................--*) *)
+(*--... Operations on par AMS ...............................................--*)
 
-(* (*--... Operations on basic blocks .........................................--*) *)
+(*--... Operations on basic blocks .........................................--*)
 
-(* (*--... Operations on instructions .........................................--*) *)
+(*--... Operations on instructions .........................................--*)
 
-(* (*--... Operations on call sites ...........................................--*) *)
+(*--... Operations on call sites ...........................................--*)
 
-(* (*--... Operations on call instructions (only) .............................--*) *)
+(*--... Operations on call instructions (only) .............................--*)
 
-(* (*--... Operations on load/store instructions (only) .......................--*) *)
+(*--... Operations on load/store instructions (only) .......................--*)
 
-(* (*--... Operations on terminators ..........................................--*) *)
+(*--... Operations on terminators ..........................................--*)
 
-(* (*--... Operations on branches .............................................--*) *)
+(*--... Operations on branches .............................................--*)
 
-(* (*--... Operations on phi nodes ............................................--*) *)
+(*--... Operations on phi nodes ............................................--*)
 
-(* (*===-- Instruction builders ----------------------------------------------===*) *)
+(*===-- Instruction builders ----------------------------------------------===*)
 
-(* (*--... Metadata ...........................................................--*) *)
+(*--... Metadata ...........................................................--*)
 
-(* (*--... Terminators ........................................................--*) *)
+(*--... Terminators ........................................................--*)
 
-(* (*--... Arithmetic .........................................................--*) *)
+(*--... Arithmetic .........................................................--*)
 
-(* (*--... Memory .............................................................--*) *)
+(*--... Memory .............................................................--*)
 
-(* (*--... Casts ..............................................................--*) *)
+(*--... Casts ..............................................................--*)
 
-(* (*--... Comparisons ........................................................--*) *)
+(*--... Comparisons ........................................................--*)
 
-(* (*--... Miscellaneous instructions .........................................--*) *)
+(*--... Miscellaneous instructions .........................................--*)
 
-(* (*===-- Memory buffers ----------------------------------------------------===*) *)
+(*===-- Memory buffers ----------------------------------------------------===*)
 
-(* structure MemoryBuffer = *)
-(* struct *)
-(* end *)
+structure MemoryBuffer =
+struct
+end
 
-(* (*===-- Pass Manager ------------------------------------------------------===*) *)
+(*===-- Pass Manager ------------------------------------------------------===*)
 
-(* structure PassManager = *)
-(* struct *)
-(* end *)
+structure PassManager =
+struct
+end
 
 end
