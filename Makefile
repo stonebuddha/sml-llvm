@@ -16,7 +16,7 @@ smlnj: llvm32.dylib FFI32/llvm.cm
 mlton: test
 
 clean:
-	rm -rf test test-image* *.dylib *.dSYM FFI32 FFI64
+	rm -rf test test-image* *.dylib *.dSYM FFI32 FFI64 .cm
 
 run-smlnj: smlnj
 	sml @SMLload=test-image $*

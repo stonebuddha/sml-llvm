@@ -1,5 +1,5 @@
-FFI32/
-FFI64/
+FFI32
+FFI64
 
 *.dylib
 *.dSYM
@@ -7,4 +7,4 @@ FFI64/
 test
 test-image*
 
-.cm/
+.cm
