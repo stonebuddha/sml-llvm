@@ -13,4 +13,30 @@ void llvm_dump_module(void *);
 void llvm_print_module(const char *, void *);
 const char *llvm_string_of_llmodule(void *);
 void llvm_set_module_inline_asm(void *, const char *);
-void *llvm_get_module_context(void *);
+void *llvm_module_context(void *);
+
+int llvm_classify_type(void *);
+void *llvm_type_context(void *);
+int llvm_type_is_sized(void *);
+void llvm_dump_type(void *);
+const char *llvm_string_of_lltype(void *);
+
+void *llvm_i1_type(void *);
+void *llvm_i8_type(void *);
+void *llvm_i16_type(void *);
+void *llvm_i32_type(void *);
+void *llvm_i64_type(void *);
+void *llvm_integer_type(void *, int);
+int llvm_integer_bitwidth(void *);
+
+void *llvm_float_type(void *);
+void *llvm_double_type(void *);
+void *llvm_x86fp80_type(void *);
+void *llvm_fp128_type(void *);
+void *llvm_ppc_fp128_type(void *);
+
+void *llvm_function_type(void *, void **, int);
+void *llvm_var_arg_function_type(void *, void **, int);
+int llvm_is_var_arg(void *);
+void *llvm_return_type(void *);
+void **llvm_param_types(void *, int *);

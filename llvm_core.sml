@@ -1,6 +1,9 @@
 structure LlvmCore (*:> LLVM_CORE*) =
 struct
 
+infixr 0 $
+fun f $ x = f x
+
 type llcontext = C.voidptr
 type llmodule = C.voidptr
 type lltype = C.voidptr
@@ -9,7 +12,7 @@ type lluse = C.voidptr
 type llbasicblock = C.voidptr
 type llbuilder = C.voidptr
 type llmemorybuffer = C.voidptr
-type llmdkind = Int32.int
+type llmdkind = int
 
 structure TypeKind =
 struct
@@ -414,7 +417,7 @@ fun mdkind_id (C : llcontext) (S : string) : llmdkind =
   let
       val S' = ZString.dupML S
   in
-      F_llvm_mdkind_id.f (C, S')
+      (Int32.toInt $ F_llvm_mdkind_id.f (C, S'))
       before
       C.free S'
   end
@@ -486,54 +489,96 @@ fun set_module_inline_asm (M : llmodule) (S : string) =
       before
       C.free S'
   end
-fun module_context (M : llmodule) : llcontext = F_llvm_get_module_context.f M
+fun module_context (M : llmodule) : llcontext = F_llvm_module_context.f M
 
-(* (*===-- Types -------------------------------------------------------------===*) *)
-(* val classify_type = *)
-(*     let *)
-(*         val f = _import "llvm_classify_type" : lltype -> int; *)
-(*     in *)
-(*         fn Ty => TypeKind.fromInt (f Ty) *)
-(*     end *)
-(* val type_context = _import "llvm_type_context" : lltype -> llcontext; *)
-(* val type_is_sized = _import "llvm_type_is_sized" : lltype -> bool; *)
-(* val dump_type = _import "llvm_dump_type" : lltype -> unit; *)
-(* val string_of_lltype = _import "llvm_string_of_lltype" : lltype -> string; *)
+(*===-- Types -------------------------------------------------------------===*)
+fun classify_type (Ty : lltype) : TypeKind.t = TypeKind.fromInt $ Int32.toInt $ F_llvm_classify_type.f Ty
+fun type_context (Ty : lltype) : llcontext = F_llvm_type_context.f Ty
+fun type_is_sized (Ty : lltype) : bool =
+  case F_llvm_type_is_sized.f Ty of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "type_is_sized")
+fun dump_type (Ty : lltype) : unit = F_llvm_dump_type.f Ty
+fun string_of_lltype (Ty : lltype) : string =
+  let
+      val S = F_llvm_string_of_lltype.f Ty
+  in
+      ZString.toML S
+      before
+      C.free S
+  end
 
-(* (*--... Operations on integer types ........................................--*) *)
-(* val i1_type = _import "llvm_i1_type" : llcontext -> lltype; *)
-(* val i8_type = _import "llvm_i8_type" : llcontext -> lltype; *)
-(* val i16_type = _import "llvm_i16_type" : llcontext -> lltype; *)
-(* val i32_type = _import "llvm_i32_type" : llcontext -> lltype; *)
-(* val i64_type = _import "llvm_i64_type" : llcontext -> lltype; *)
+(*--... Operations on integer types ........................................--*)
+fun i1_type (C : llcontext) : lltype = F_llvm_i1_type.f C
+fun i8_type (C : llcontext) : lltype = F_llvm_i8_type.f C
+fun i16_type (C : llcontext) : lltype = F_llvm_i16_type.f C
+fun i32_type (C : llcontext) : lltype = F_llvm_i32_type.f C
+fun i64_type (C : llcontext) : lltype = F_llvm_i64_type.f C
 
-(* val integer_type = _import "llvm_integer_type" : llcontext * int -> lltype; *)
-(* val integer_bitwidth = _import "llvm_integer_bitwidth" : lltype -> int; *)
+fun integer_type (C : llcontext) (NumBits : int) : lltype = F_llvm_integer_type.f (C, Int32.fromInt NumBits)
+fun integer_bitwidth (IntegerTy : lltype) : int = Int32.toInt $ F_llvm_integer_bitwidth.f IntegerTy
 
-(* (*--... Operations on real types ...........................................--*) *)
-(* val float_type = _import "llvm_float_type" : llcontext -> lltype; *)
-(* val double_type = _import "llvm_double_type" : llcontext -> lltype; *)
-(* val x86fp80_type = _import "llvm_x86fp80_type" : llcontext -> lltype; *)
-(* val fp128_type = _import "llvm_fp128_type" : llcontext -> lltype; *)
-(* val ppc_fp128_type = _import "llvm_ppc_fp128_type" : llcontext -> lltype; *)
+(*--... Operations on real types ...........................................--*)
+fun float_type (C : llcontext) : lltype = F_llvm_float_type.f C
+fun double_type (C : llcontext) : lltype = F_llvm_double_type.f C
+fun x86fp80_type (C : llcontext) : lltype = F_llvm_x86fp80_type.f C
+fun fp128_type (C : llcontext) : lltype = F_llvm_fp128_type.f C
+fun ppc_fp128_type (C : llcontext) : lltype = F_llvm_ppc_fp128_type.f C
 
-(* (*--... Operations on function types .......................................--*) *)
-(* val function_type = *)
-(*     let *)
-(*         val f = _import "llvm_function_type" : lltype * lltype array * int -> lltype; *)
-(*     in *)
-(*         fn RetTy => fn ParamTys => f (RetTy, ParamTys, Array.length ParamTys) *)
-(*     end *)
-(* val var_arg_function_type = *)
-(*     let *)
-(*         val f = _import "llvm_var_arg_function_type" : lltype * lltype array * int -> lltype; *)
-(*     in *)
-(*         fn RetTy => fn ParamTys => f (RetTy, ParamTys, Array.length ParamTys) *)
-(*     end *)
+(*--... Operations on function types .......................................--*)
+fun dupVPtrArr (arr : C.voidptr array) : C.rw C.voidptr_obj C.ptr =
+  let
+      val buf = C.alloc C.T.voidptr (Word.fromInt $ Array.length arr)
+      val () = Array.appi (fn (i, vptr) =>
+                              let
+                                  val loc = C.Ptr.|+| (buf, i)
+                              in
+                                  C.Set.voidptr (C.Ptr.|*| loc, vptr)
+                              end) arr
+  in
+      buf
+  end
+fun toVPtrArr (buf : C.rw C.voidptr_obj C.ptr) (len : C.rw C.sint_obj) : C.voidptr array =
+  Array.tabulate (Int32.toInt $ C.Get.sint len, fn i =>
+                          let
+                              val loc = C.Ptr.|+| (buf, i)
+                          in
+                              C.Get.voidptr $ C.Ptr.|*| loc
+                          end)
 
-(* val is_var_arg = _import "llvm_is_var_arg" : lltype -> bool; *)
-(* val return_type = _import "LLVMGetReturnType" : lltype -> lltype; *)
-(* val param_types = _import "llvm_param_types" : lltype -> lltype array; *)
+fun function_type (ReturnTy : lltype) (ParamTys : lltype array) : lltype =
+  let
+      val ParamTys' = dupVPtrArr ParamTys
+  in
+      F_llvm_function_type.f (ReturnTy, ParamTys', Int32.fromInt $ Array.length ParamTys)
+      before
+      C.free ParamTys'
+  end
+fun var_arg_function_type (ReturnTy : lltype) (ParamTys : lltype array) : lltype =
+  let
+      val ParamTys' = dupVPtrArr ParamTys
+  in
+      F_llvm_var_arg_function_type.f (ReturnTy, ParamTys', Int32.fromInt $ Array.length ParamTys)
+      before
+      C.free ParamTys'
+  end
+
+fun is_var_arg (FunctionTy : lltype) : bool =
+  case F_llvm_is_var_arg.f FunctionTy of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "is_var_arg")
+fun return_type (FunctionTy : lltype) : lltype = F_llvm_return_type.f FunctionTy
+fun param_types (FunctionTy : lltype) : lltype array =
+  let
+      val len = C.new C.T.sint
+      val buf = F_llvm_param_types.f (FunctionTy, C.Ptr.|&| len)
+  in
+      toVPtrArr buf len
+      before
+      (C.free buf; C.free (C.Ptr.|&| len))
+  end
 
 (* (*--... Operations on struct types .........................................--*) *)
 (* val struct_type = *)

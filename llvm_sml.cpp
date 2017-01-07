@@ -41,7 +41,7 @@ LLVMContextRef llvm_global_context(void) {
 /* llcontext * string -> int */
 extern "C"
 int llvm_mdkind_id(LLVMContextRef C, const char *Name) {
-  int MDKindID = LLVMGetMDKindIDInContext(C, Name, strlen(Name));
+  unsigned MDKindID = LLVMGetMDKindIDInContext(C, Name, strlen(Name));
   return MDKindID;
 }
 
@@ -67,8 +67,8 @@ const char *llvm_target_triple(LLVMModuleRef M) {
 
 /* string * llmodule -> unit */
 extern "C"
-void llvm_set_target_triple(const char *Trip, LLVMModuleRef M) {
-  LLVMSetTarget(M, Trip);
+void llvm_set_target_triple(const char *Triple, LLVMModuleRef M) {
+  LLVMSetTarget(M, Triple);
 }
 
 /* llmodule -> string */
@@ -79,8 +79,8 @@ const char *llvm_data_layout(LLVMModuleRef M) {
 
 /* string * llmodule -> unit */
 extern "C"
-void llvm_set_data_layout(const char *Layout, LLVMModuleRef M) {
-  LLVMSetDataLayout(M, Layout);
+void llvm_set_data_layout(const char *DataLayoutStr, LLVMModuleRef M) {
+  LLVMSetDataLayout(M, DataLayoutStr);
 }
 
 /* llmodule -> unit */
@@ -92,9 +92,9 @@ void llvm_dump_module(LLVMModuleRef M) {
 /* string * llmodule -> unit */
 extern "C"
 void llvm_print_module(const char *Filename, LLVMModuleRef M) {
-  char *Message;
+  char *ErrorMessage;
 
-  if (LLVMPrintModuleToFile(M, Filename, &Message)) {
+  if (LLVMPrintModuleToFile(M, Filename, &ErrorMessage)) {
     /* TODO: throw an exception */
   }
 }
@@ -120,6 +120,156 @@ void llvm_set_module_inline_asm(LLVMModuleRef M, const char *Asm) {
 
 /* llmodule -> llcontext */
 extern "C"
-LLVMContextRef llvm_get_module_context(LLVMModuleRef M) {
+LLVMContextRef llvm_module_context(LLVMModuleRef M) {
   return LLVMGetModuleContext(M);
+}
+
+/*===-- Types -------------------------------------------------------------===*/
+
+/* lltype -> int */
+extern "C"
+int llvm_classify_type(LLVMTypeRef Ty) {
+  return LLVMGetTypeKind(Ty);
+}
+
+/* lltype -> llcontext */
+extern "C"
+LLVMContextRef llvm_type_context(LLVMTypeRef Ty) {
+  return LLVMGetTypeContext(Ty);
+}
+
+/* lltype -> bool */
+extern "C"
+int llvm_type_is_sized(LLVMTypeRef Ty) {
+  return LLVMTypeIsSized(Ty);
+}
+
+/* lltype -> unit */
+extern "C"
+void llvm_dump_type(LLVMTypeRef Ty) {
+  LLVMDumpType(Ty);
+}
+
+/* lltype -> string */
+extern "C"
+const char *llvm_string_of_lltype(LLVMTypeRef Ty) {
+  const char *TypeStr;
+  char *TypeCStr;
+
+  TypeCStr = LLVMPrintTypeToString(Ty);
+  TypeStr = copy_string(TypeCStr);
+  LLVMDisposeMessage(TypeCStr);
+
+  return TypeStr;
+}
+
+/*--... Operations on integer types ........................................--*/
+
+/* llcontext -> lltype */
+extern "C"
+LLVMTypeRef llvm_i1_type(LLVMContextRef C) {
+  return LLVMInt1TypeInContext(C);
+}
+
+/* llcontext -> lltype */
+extern "C"
+LLVMTypeRef llvm_i8_type(LLVMContextRef C) {
+  return LLVMInt8TypeInContext(C);
+}
+
+/* llcontext -> lltype */
+extern "C"
+LLVMTypeRef llvm_i16_type(LLVMContextRef C) {
+  return LLVMInt16TypeInContext(C);
+}
+
+/* llcontext -> lltype */
+extern "C"
+LLVMTypeRef llvm_i32_type(LLVMContextRef C) {
+  return LLVMInt32TypeInContext(C);
+}
+
+/* llcontext -> lltype */
+extern "C"
+LLVMTypeRef llvm_i64_type(LLVMContextRef C) {
+  return LLVMInt64TypeInContext(C);
+}
+
+/* llcontext * int -> lltype */
+extern "C"
+LLVMTypeRef llvm_integer_type(LLVMContextRef C, int NumBits) {
+  return LLVMIntTypeInContext(C, NumBits);
+}
+
+/* lltype -> int */
+extern "C"
+int llvm_integer_bitwidth(LLVMTypeRef IntegerTy) {
+  return LLVMGetIntTypeWidth(IntegerTy);
+}
+
+/*--... Operations on real types ...........................................--*/
+
+/* llcontext -> lltype */
+extern "C"
+LLVMTypeRef llvm_float_type(LLVMContextRef C) {
+  return LLVMFloatTypeInContext(C);
+}
+
+/* llcontext -> lltype */
+extern "C"
+LLVMTypeRef llvm_double_type(LLVMContextRef C) {
+  return LLVMDoubleTypeInContext(C);
+}
+
+/* llcontext -> lltype */
+extern "C"
+LLVMTypeRef llvm_x86fp80_type(LLVMContextRef C) {
+  return LLVMX86FP80TypeInContext(C);
+}
+
+/* llcontext -> lltype */
+extern "C"
+LLVMTypeRef llvm_fp128_type(LLVMContextRef C) {
+  return LLVMFP128TypeInContext(C);
+}
+
+/* llcontext -> lltype */
+extern "C"
+LLVMTypeRef llvm_ppc_fp128_type(LLVMContextRef C) {
+  return LLVMPPCFP128TypeInContext(C);
+}
+
+/*--... Operations on function types .......................................--*/
+
+/* lltype * lltype array * int -> lltype */
+extern "C"
+LLVMTypeRef llvm_function_type(LLVMTypeRef ReturnTy, LLVMTypeRef *ParamTys, int ParamCount) {
+  return LLVMFunctionType(ReturnTy, ParamTys, ParamCount, 0);
+}
+
+/* lltype * lltype array * int -> lltype */
+extern "C"
+LLVMTypeRef llvm_var_arg_function_type(LLVMTypeRef ReturnTy, LLVMTypeRef *ParamTys, int ParamCount) {
+  return LLVMFunctionType(ReturnTy, ParamTys, ParamCount, 1);
+}
+
+/* lltype -> bool */
+extern "C"
+int llvm_is_var_arg(LLVMTypeRef FunctionTy) {
+  return LLVMIsFunctionVarArg(FunctionTy);
+}
+
+/* lltype -> lltype */
+extern "C"
+LLVMTypeRef llvm_return_type(LLVMTypeRef FunctionTy) {
+  return LLVMGetReturnType(FunctionTy);
+}
+
+/* lltype -> lltype array */
+extern "C"
+LLVMTypeRef *llvm_param_types(LLVMTypeRef FunctionTy, int *ParamCount) {
+  LLVMTypeRef *Tys = (LLVMTypeRef *) malloc(sizeof(LLVMTypeRef) * LLVMCountParamTypes(FunctionTy));
+  LLVMGetParamTypes(FunctionTy, Tys);
+  *ParamCount = LLVMCountParamTypes(FunctionTy);
+  return Tys;
 }
