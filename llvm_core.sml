@@ -144,6 +144,17 @@ datatype t =
          | Sge
          | Slt
          | Sle
+
+fun toInt Eq = 0
+  | toInt Ne = 1
+  | toInt Ugt = 2
+  | toInt Uge = 3
+  | toInt Ult = 4
+  | toInt Ule = 5
+  | toInt Sgt = 6
+  | toInt Sge = 7
+  | toInt Slt = 8
+  | toInt Sle = 9
 end
 
 structure Fcmp =
@@ -165,6 +176,23 @@ datatype t =
          | Ule
          | Une
          | True
+
+fun toInt False = 0
+  | toInt Oeq = 1
+  | toInt Ogt = 2
+  | toInt Oge = 3
+  | toInt Olt = 4
+  | toInt Ole = 5
+  | toInt One = 6
+  | toInt Ord = 7
+  | toInt Uno = 8
+  | toInt Ueq = 9
+  | toInt Ugt = 10
+  | toInt Uge = 11
+  | toInt Ult = 12
+  | toInt Ule = 13
+  | toInt Une = 14
+  | toInt True = 15
 end
 
 structure Opcode =
@@ -949,6 +977,16 @@ fun string_of_const (Val : llvalue) : string option =
 fun const_element (Val : llvalue) (N : int) : llvalue = F_llvm_const_element.f (Val, Int32.fromInt N)
 
 (*--... Constant expressions ...............................................--*)
+fun const_icmp (Pred : Icmp.t) (LHSConstant : llvalue) (RHSConstant : llvalue) : llvalue = F_llvm_const_icmp.f (Int32.fromInt $ Icmp.toInt Pred, LHSConstant, RHSConstant)
+fun const_fcmp (Pred : Fcmp.t) (LHSConstant : llvalue) (RHSConstant : llvalue) : llvalue = F_llvm_const_fcmp.f (Int32.fromInt $ Fcmp.toInt Pred, LHSConstant, RHSConstant)
+fun const_gep (ConstantVal : llvalue) (Indices : llvalue array) : llvalue =
+  let
+      val Indices' = dupVPtrArr Indices
+  in
+      F_llvm_const_gep.f (ConstantVal, Indices', Int32.fromInt $ Array.length Indices)
+      before
+      C.free Indices'
+  end
 
 (*--... Operations on global variables, functions, and aliases (globals) ...--*)
 

@@ -857,3 +857,23 @@ extern "C"
 LLVMValueRef llvm_const_element(LLVMValueRef Val, int N) {
   return LLVMGetElementAsConstant(Val, N);
 }
+
+/*--... Constant expressions ...............................................--*/
+
+/* Icmp.t * llvalue * llvalue -> llvaue */
+extern "C"
+LLVMValueRef llvm_const_icmp(int Pred, LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+  return LLVMConstICmp((LLVMIntPredicate) (Pred + LLVMIntEQ), LHSConstant, RHSConstant);
+}
+
+/* Fcmp.t * llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_fcmp(int Pred, LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
+  return LLVMConstFCmp((LLVMRealPredicate) Pred, LHSConstant, RHSConstant);
+}
+
+/* llvalue * llvalue array -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_gep(LLVMValueRef ConstantVal, LLVMValueRef *Indices, int IndexCount) {
+  return LLVMConstGEP(ConstantVal, Indices, IndexCount);
+}
