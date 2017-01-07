@@ -241,13 +241,13 @@ LLVMTypeRef llvm_ppc_fp128_type(LLVMContextRef C) {
 
 /*--... Operations on function types .......................................--*/
 
-/* lltype * lltype array * int -> lltype */
+/* lltype * lltype array -> lltype */
 extern "C"
 LLVMTypeRef llvm_function_type(LLVMTypeRef ReturnTy, LLVMTypeRef *ParamTys, int ParamCount) {
   return LLVMFunctionType(ReturnTy, ParamTys, ParamCount, 0);
 }
 
-/* lltype * lltype array * int -> lltype */
+/* lltype * lltype array -> lltype */
 extern "C"
 LLVMTypeRef llvm_var_arg_function_type(LLVMTypeRef ReturnTy, LLVMTypeRef *ParamTys, int ParamCount) {
   return LLVMFunctionType(ReturnTy, ParamTys, ParamCount, 1);
@@ -270,6 +270,64 @@ extern "C"
 LLVMTypeRef *llvm_param_types(LLVMTypeRef FunctionTy, int *ParamCount) {
   LLVMTypeRef *Tys = (LLVMTypeRef *) malloc(sizeof(LLVMTypeRef) * LLVMCountParamTypes(FunctionTy));
   LLVMGetParamTypes(FunctionTy, Tys);
-  *ParamCount = LLVMCountParamTypes(FunctionTy);
+  (*ParamCount) = LLVMCountParamTypes(FunctionTy);
   return Tys;
+}
+
+/*--... Operations on struct types .........................................--*/
+
+/* llcontext * lltype array -> lltype */
+extern "C"
+LLVMTypeRef llvm_struct_type(LLVMContextRef C, LLVMTypeRef *ElemTys, int ElemCount) {
+  return LLVMStructTypeInContext(C, ElemTys, ElemCount, 0);
+}
+
+/* llcontext * lltype array -> lltype */
+extern "C"
+LLVMTypeRef llvm_packed_struct_type(LLVMContextRef C, LLVMTypeRef *ElemTys, int ElemCount) {
+  return LLVMStructTypeInContext(C, ElemTys, ElemCount, 1);
+}
+
+/* lltype -> string */
+extern "C"
+const char *llvm_struct_name(LLVMTypeRef StructTy) {
+  const char *Name = LLVMGetStructName(StructTy);
+  if (Name) {
+    return copy_string(Name);
+  } else {
+    return NULL;
+  }
+}
+
+/* llcontext * string -> lltype */
+extern "C"
+LLVMTypeRef llvm_named_struct_type(LLVMContextRef C, const char *Name) {
+  return LLVMStructCreateNamed(C, Name);
+}
+
+/* lltype * lltype array * bool -> unit */
+extern "C"
+void llvm_struct_set_body(LLVMTypeRef StructTy, LLVMTypeRef *ElemTys, int ElemCount, int Packed) {
+  LLVMStructSetBody(StructTy, ElemTys, ElemCount, Packed);
+}
+
+/* lltype -> lltype array */
+extern "C"
+LLVMTypeRef *llvm_struct_element_types(LLVMTypeRef StructTy, int *ElemCount) {
+  LLVMTypeRef *Tys = (LLVMTypeRef *) malloc(sizeof(LLVMTypeRef) * LLVMCountStructElementTypes(StructTy));
+  LLVMGetStructElementTypes(StructTy, Tys);
+  (*ElemCount) = LLVMCountStructElementTypes(StructTy);
+  return Tys;
+}
+
+/* lltype -> bool */
+extern "C"
+int llvm_is_packed(LLVMTypeRef StructTy) {
+  return LLVMIsPackedStruct(StructTy);
+}
+
+/* lltype -> bool */
+extern "C"
+int llvm_is_opaque(LLVMTypeRef StructTy) {
+  return LLVMIsOpaqueStruct(StructTy);
 }

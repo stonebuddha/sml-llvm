@@ -580,41 +580,68 @@ fun param_types (FunctionTy : lltype) : lltype array =
       (C.free buf; C.free (C.Ptr.|&| len))
   end
 
-(* (*--... Operations on struct types .........................................--*) *)
-(* val struct_type = *)
-(*     let *)
-(*         val f = _import "llvm_struct_type" : llcontext * lltype array * int -> lltype; *)
-(*     in *)
-(*         fn C => fn ElemTys => f (C, ElemTys, Array.length ElemTys) *)
-(*     end *)
-(* val packed_struct_type = *)
-(*     let *)
-(*         val f = _import "llvm_packed_struct_type" : llcontext * lltype array * int -> lltype; *)
-(*     in *)
-(*         fn C => fn ElemTys => f (C, ElemTys, Array.length ElemTys) *)
-(*     end *)
-(* val struct_name = *)
-(*     let *)
-(*         val f = _import "llvm_struct_name" : lltype * bool ref -> string; *)
-(*     in *)
-(*         fn Ty => *)
-(*            let *)
-(*                val is_null = ref false *)
-(*                val res = f (Ty, is_null) *)
-(*            in *)
-(*                if !is_null then NONE else SOME res *)
-(*            end *)
-(*     end *)
-(* val named_struct_type = _import "llvm_named_struct_type" : llcontext * string -> lltype; *)
-(* val struct_set_body = *)
-(*     let *)
-(*         val f = _import "llvm_struct_set_body" : lltype * lltype array * int * bool -> unit; *)
-(*     in *)
-(*         fn Ty => fn ElemTys => fn Packed => f (Ty, ElemTys, Array.length ElemTys, Packed) *)
-(*     end *)
-(* val struct_element_types = _import "llvm_struct_element_types" : lltype -> lltype array; *)
-(* val is_packed = _import "llvm_is_packed" : lltype -> bool; *)
-(* val is_opaque = _import "llvm_is_opaque" : lltype -> bool; *)
+(*--... Operations on struct types .........................................--*)
+fun struct_type (C : llcontext) (ElemTys : lltype array) : lltype =
+  let
+      val ElemTys' = dupVPtrArr ElemTys
+  in
+      F_llvm_struct_type.f (C, ElemTys', Int32.fromInt $ Array.length ElemTys)
+      before
+      C.free ElemTys'
+  end
+fun packed_struct_type (C : llcontext) (ElemTys : lltype array) : lltype =
+  let
+      val ElemTys' = dupVPtrArr ElemTys
+  in
+      F_llvm_packed_struct_type.f (C, ElemTys', Int32.fromInt $ Array.length ElemTys)
+      before
+      C.free ElemTys'
+  end
+fun struct_name (StructTy : lltype) : string option =
+  let
+      val S = F_llvm_struct_name.f StructTy
+  in
+      if C.Ptr.isNull S then NONE
+      else
+          SOME (ZString.toML S)
+          before
+          C.free S
+  end
+fun named_struct_type (C : llcontext) (Name : string) : lltype =
+  let
+      val Name' = ZString.dupML Name
+  in
+      F_llvm_named_struct_type.f (C, Name')
+      before
+      C.free Name'
+  end
+fun struct_set_body (StructTy : lltype) (ElemTys : lltype array) (Packed : bool) : unit =
+  let
+      val ElemTys' = dupVPtrArr ElemTys
+  in
+      F_llvm_struct_set_body.f (StructTy, ElemTys', Int32.fromInt $ Array.length ElemTys, if Packed then 1 else 0)
+      before
+      C.free ElemTys'
+  end
+fun struct_element_types (StructTy : lltype) : lltype array =
+  let
+      val len = C.new C.T.sint
+      val buf = F_llvm_struct_element_types.f (StructTy, C.Ptr.|&| len)
+  in
+      toVPtrArr buf len
+      before
+      (C.free buf; C.free (C.Ptr.|&| len))
+  end
+fun is_packed (StructTy : lltype) : bool =
+  case F_llvm_is_packed.f StructTy of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "is_packed")
+fun is_opaque (StructTy : lltype) : bool =
+  case F_llvm_is_opaque.f StructTy of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "is_opaque")
 
 (* (*--... Operations on pointer, vector, and array types .....................--*) *)
 (* val array_type = _import "llvm_array_type" : lltype * int -> lltype; *)

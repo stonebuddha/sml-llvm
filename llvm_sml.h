@@ -40,3 +40,12 @@ void *llvm_var_arg_function_type(void *, void **, int);
 int llvm_is_var_arg(void *);
 void *llvm_return_type(void *);
 void **llvm_param_types(void *, int *);
+
+void *llvm_struct_type(void *, void **, int);
+void *llvm_packed_struct_type(void *, void **, int);
+const char *llvm_struct_name(void *);
+void *llvm_named_struct_type(void *, const char *);
+void llvm_struct_set_body(void *, void **, int, int);
+void **llvm_struct_element_types(void *, int *);
+int llvm_is_packed(void *);
+int llvm_is_opaque(void *);
