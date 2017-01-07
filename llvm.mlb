@@ -1,7 +1,11 @@
-local
-  $(SML_LIB)/basis/basis.mlb
-  $(SML_LIB)/basis/mlton.mlb
-in
-  llvm_core.sig
-  llvm_core.sml
-end
+$(SML_LIB)/basis/basis.mlb
+$(SML_LIB)/basis/mlton.mlb
+$(SML_LIB)/mlnlffi-lib/mlnlffi-lib.mlb
+FFI64/llvm.mlb
+
+llvm_core.sig
+llvm_core.sml
+
+test.sml
+
+mlton-test.sml

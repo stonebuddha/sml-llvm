@@ -1,4 +1,10 @@
-*.o
-*.exe
+FFI32/
+FFI64/
 
-export.h
+*.dylib
+*.dSYM
+
+test
+test-image*
+
+.cm/

@@ -1,19 +1,42 @@
-.PHONY: default clean
+.PHONY: default all smlnj mlton clean run-smlnj run-mlton
 
 FILES = \
 llvm_core.sig \
-llvm_core.sml
+llvm_core.sml \
+test.sml \
+mlton-test.sml
 
-default: llvm.exe
+default: smlnj
 
-export.h llvm.0.o llvm.1.o: llvm.mlb $(FILES)
-	mlton -stop o -default-ann 'allowFFI true' -export-header export.h llvm.mlb
+all: smlnj mlton
 
-llvm_sml.o: llvm_sml.c export.h
-	gcc -I/usr/local/include -fPIC -Wall -W -Wno-unused-parameter -Wwrite-strings -Wmissing-field-initializers -pedantic -Wno-long-long -Wcovered-switch-default -Wdelete-non-virtual-dtor -Werror=date-time -g -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -c llvm_sml.c
+smlnj: llvm32.dylib FFI32/llvm.cm
+	ml-build -Ccompiler-mc.error-non-exhaustive-match=true -Ccompiler-mc.error-non-exhaustive-bind=true llvm.cm Test.main test-image
 
-llvm.exe: llvm.0.o llvm.1.o llvm_sml.o
-	g++ -o llvm.exe llvm.0.o llvm.1.o llvm_sml.o -L/usr/local/lib/mlton/targets/self -lmlton-pic -lgdtoa-pic -lm -lgmp -m64 -L/usr/local/lib -Wl,-search_paths_first -Wl,-headerpad_max_install_names -lLLVMX86Disassembler -lLLVMX86AsmParser -lLLVMX86CodeGen -lLLVMSelectionDAG -lLLVMAsmPrinter -lLLVMDebugInfoCodeView -lLLVMCodeGen -lLLVMScalarOpts -lLLVMInstCombine -lLLVMInstrumentation -lLLVMTransformUtils -lLLVMBitWriter -lLLVMX86Desc -lLLVMMCDisassembler -lLLVMX86Info -lLLVMX86AsmPrinter -lLLVMX86Utils -lLLVMMCJIT -lLLVMExecutionEngine -lLLVMTarget -lLLVMAnalysis -lLLVMProfileData -lLLVMRuntimeDyld -lLLVMObject -lLLVMMCParser -lLLVMBitReader -lLLVMMC -lLLVMCore -lLLVMSupport -lcurses -lz -lm
+mlton: test
 
 clean:
-	rm *.o *.exe export.h
+	rm -rf test test-image* *.dylib *.dSYM FFI32 FFI64
+
+run-smlnj: smlnj
+	sml @SMLload=test-image $*
+
+run-mlton: test llvm64.dylib
+	./test
+
+test: llvm.mlb FFI64/llvm.mlb $(FILES)
+	mlton -output test llvm.mlb
+
+llvm32.dylib: llvm_sml.cpp
+	g++ -m32 -dynamiclib `~/Experiments/llvm/build32/bin/llvm-config --cxxflags --ldflags --system-libs --libs core` -o llvm32.dylib llvm_sml.cpp
+
+llvm64.dylib: llvm_sml.cpp
+	g++ -dynamiclib `llvm-config --cxxflags --ldflags --system-libs --libs core` -o llvm64.dylib llvm_sml.cpp
+
+FFI32/llvm.cm: llvm_sml.h
+	rm -rf FFI32
+	ml-nlffigen -include ../stub32.sml -libhandle Stub.libh -dir FFI32 -cmfile llvm.cm llvm_sml.h
+
+FFI64/llvm.mlb: llvm_sml.h
+	rm -rf FFI64
+	mlnlffigen -include ../stub64.sml -libhandle Stub.libh -dir FFI64 -mlbfile llvm.mlb llvm_sml.h
