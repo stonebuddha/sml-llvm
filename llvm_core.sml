@@ -665,14 +665,138 @@ val get_mdnode_operands = _import "llvm_get_mdnode_operands" : llvalue -> llvalu
 val get_named_metadata = _import "llvm_get_namedmd" : llmodule * string -> llvalue array;
 val add_named_metadata_operand = _import "llvm_append_namedmd" : llmodule * string * llvalue -> unit;
 
-val () =
+(*--... Operations on scalar constants .....................................--*)
+val const_int = _import "llvm_const_int" : lltype * int -> llvalue;
+val const_of_int64 = _import "llvm_const_of_int64" : lltype * Int64.int * bool -> llvalue;
+val int64_of_const =
     let
-        val C = global_context ()
-        val M = create_module (C, "timl")
-        val () = dump_module M
-        val () = dispose_module M
+        val f = _import "llvm_int64_of_const" : llvalue * bool ref -> Int64.int;
     in
-        ()
+        fn Val =>
+           let
+               val is_null = ref false
+               val res = f (Val, is_null)
+           in
+               if !is_null then NONE else SOME res
+           end
     end
+val const_int_of_string = _import "llvm_const_int_of_string" : lltype * string * int -> llvalue;
+val const_float = _import "llvm_const_float" : lltype * real -> llvalue;
+val float_of_const =
+    let
+        val f = _import "llvm_float_of_const" : llvalue * bool ref -> real;
+    in
+        fn Val =>
+           let
+               val is_null = ref false
+               val res = f (Val, is_null)
+           in
+               if !is_null then NONE else SOME res
+           end
+    end
+val const_float_of_string = _import "llvm_const_float_of_string" : lltype * string -> llvalue;
+
+(*--... Operations on composite constants ..................................--*)
+val const_string = _import "llvm_const_string" : llcontext * string -> llvalue;
+val const_stringz = _import "llvm_const_stringz" : llcontext * string -> llvalue;
+val const_array =
+    let
+        val f = _import "llvm_const_array" : lltype * llvalue array * int -> llvalue;
+    in
+        fn C => fn ElemVals => f (C, ElemVals, Array.length ElemVals)
+    end
+val const_struct =
+    let
+        val f = _import "llvm_const_struct" : llcontext * llvalue array * int -> llvalue;
+    in
+        fn C => fn ElemVals => f (C, ElemVals, Array.length ElemVals)
+    end
+val const_named_struct =
+    let
+        val f = _import "llvm_const_named_struct" : lltype * llvalue array * int -> llvalue;
+    in
+        fn Ty => fn ElemVals => f (Ty, ElemVals, Array.length ElemVals)
+    end
+val const_packed_struct =
+    let
+        val f = _import "llvm_packed_struct" : llcontext * llvalue array * int -> llvalue;
+    in
+        fn C => fn ElemVals => f (C, ElemVals, Array.length ElemVals)
+    end
+val const_vector =
+    let
+        val f = _import "llvm_const_vector" : llvalue array * int -> llvalue;
+    in
+        fn ElemVals => f (ElemVals, Array.length ElemVals)
+    end
+val string_of_const =
+    let
+        val f = _import "llvm_string_of_const" : llvalue * bool ref -> string;
+    in
+        fn Val =>
+           let
+               val is_null = ref false
+               val res = f (Val, is_null)
+           in
+               if !is_null then NONE else SOME res
+           end
+    end
+val const_element = _import "llvm_const_element" : llvalue * int -> llvalue;
+
+(*--... Constant expressions ...............................................--*)
+
+(*--... Operations on global variables, functions, and aliases (globals) ...--*)
+
+(*--... Operations on global variables .....................................--*)
+
+(*--... Operations on aliases ..............................................--*)
+
+(*--... Operations on functions ............................................--*)
+
+(*--... Operations on params ...............................................--*)
+
+(*--... Operations on basic blocks .........................................--*)
+
+(*--... Operations on instructions .........................................--*)
+
+(*--... Operations on call sites ...........................................--*)
+
+(*--... Operations on call instructions (only) .............................--*)
+
+(*--... Operations on load/store instructions (only) .......................--*)
+
+(*--... Operations on terminators ..........................................--*)
+
+(*--... Operations on branches .............................................--*)
+
+(*--... Operations on phi nodes ............................................--*)
+
+(*===-- Instruction builders ----------------------------------------------===*)
+
+(*--... Metadata ...........................................................--*)
+
+(*--... Terminators ........................................................--*)
+
+(*--... Arithmetic .........................................................--*)
+
+(*--... Memory .............................................................--*)
+
+(*--... Casts ..............................................................--*)
+
+(*--... Comparisons ........................................................--*)
+
+(*--... Miscellaneous instructions .........................................--*)
+
+(*===-- Memory buffers ----------------------------------------------------===*)
+
+structure MemoryBuffer =
+struct
+end
+
+(*===-- Pass Manager ------------------------------------------------------===*)
+
+structure PassManager =
+struct
+end
 
 end

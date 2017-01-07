@@ -602,3 +602,119 @@ Pointer llvm_get_namedmd(LLVMModuleRef M, Pointer Name) {
 void llvm_append_namedmd(LLVMModuleRef M, Pointer Name, LLVMValueRef Val) {
   LLVMAddNamedMetadataOperand(M, (const char *) Name, Val);
 }
+
+/*--... Operations on scalar constants .....................................--*/
+
+/* lltype * int -> llvalue */
+LLVMValueRef llvm_const_int(LLVMTypeRef Ty, Int32 N) {
+  return LLVMConstInt(Ty, (long long) N, 1);
+}
+
+/* lltype * Int64.int * bool -> llvalue */
+LLVMValueRef llvm_const_of_int64(LLVMTypeRef Ty, Int64 N, Bool SExt) {
+  return LLVMConstInt(Ty, N, SExt);
+}
+
+/* llvalue * bool ref -> Int64.int */
+Int64 llvm_int64_of_const(LLVMValueRef Val, Pointer is_null) {
+  if (LLVMIsAConstantInt(Val) && LLVMGetIntTypeWidth(LLVMTypeOf(Val)) <= 64) {
+    return LLVMConstIntGetSExtValue(Val);
+  } else {
+    (*((Bool *) is_null)) = 1;
+    return 0;
+  }
+}
+
+/* lltype * string * int -> llvalue */
+LLVMValueRef llvm_const_int_of_string(LLVMTypeRef Ty, Pointer S, Int32 Radix) {
+  return LLVMConstIntOfStringAndSize(Ty, (const char *) S, strlen((const char *) S), Radix);
+}
+
+/* llvalue * real -> llvalue */
+LLVMValueRef llvm_const_float(LLVMTypeRef Ty, Real64 N) {
+  return LLVMConstReal(Ty, N);
+}
+
+/* llvalue * bool ref -> real */
+Real64 llvm_float_of_const(LLVMValueRef Val, Pointer is_null) {
+  LLVMBool LosesInfo;
+  Real64 Result;
+
+  if (LLVMIsAConstantFP(Val)) {
+    Result = LLVMConstRealGetDouble(Val, &LosesInfo);
+    if (LosesInfo) {
+      (*((Bool *) is_null)) = 1;
+      return NAN;
+    } else {
+      return Result;
+    }
+  } else {
+    (*((Bool *) is_null)) = 1;
+    return NAN;
+  }
+}
+
+/* lltype * string -> llvalue */
+LLVMValueRef const_float_of_string(LLVMTypeRef Ty, Pointer S) {
+  return LLVMConstRealOfStringAndSize(Ty, (const char *) S, strlen((const char *) S));
+}
+
+/*--... Operations on composite constants ..................................--*/
+
+/* llcontext * string -> llvalue */
+LLVMValueRef llvm_const_string(LLVMContextRef C, Pointer S) {
+  return LLVMConstStringInContext(C, (const char *) S, strlen((const char *) S), 1);
+}
+
+/* llcontext * string -> llvalue */
+LLVMValueRef llvm_const_stringz(LLVMContextRef C, Pointer S) {
+  return LLVMConstStringInContext(C, (const char *) S, strlen((const char *) S), 0);
+}
+
+/* lltype * llvalue array * int -> llvalue */
+LLVMValueRef llvm_const_array(LLVMTypeRef Ty, Pointer ElemVals, Int32 NumElemVals) {
+  return LLVMConstArray(Ty, (LLVMValueRef *) ElemVals, NumElemVals);
+}
+
+/* llcontext * llvalue array * int -> llvalue */
+LLVMValueRef llvm_const_struct(LLVMContextRef C, Pointer ElemVals, Int32 NumElemVals) {
+  return LLVMConstStructInContext(C, (LLVMValueRef *) ElemVals, NumElemVals, 0);
+}
+
+/* lltype * llvalue array * int -> llvalue */
+LLVMValueRef llvm_const_named_struct(LLVMTypeRef Ty, Pointer ElemVals, Int32 NumElemVals) {
+  return LLVMConstNamedStruct(Ty, (LLVMValueRef *) ElemVals, NumElemVals);
+}
+
+/* llcontext * llvalue array * int -> llvalue */
+LLVMValueRef llvm_const_packed_struct(LLVMContextRef C, Pointer ElemVals, Int32 NumElemVals) {
+  return LLVMConstStructInContext(C, (LLVMValueRef *) ElemVals, NumElemVals, 1);
+}
+
+/* llvalue array * int -> llvalue */
+LLVMValueRef llvm_const_vector(Pointer ElemVals, Int32 NumElemVals) {
+  return LLVMConstVector((LLVMValueRef *) ElemVals, NumElemVals);
+}
+
+/* llvalue * bool ref -> string */
+Pointer llvm_string_of_const(LLVMValueRef Val, Pointer is_null) {
+  const char *S;
+  size_t Len;
+  char *Str;
+
+  if (LLVMIsAConstantDataSequential(Val) && LLVMIsConstantString(Val)) {
+    S = LLVMGetAsString(Val, &Len);
+    Str = malloc(sizeof(char) * (Len + 1));
+    memcpy(Str, S, Len);
+
+    return (Pointer) Str;
+  } else {
+    (*((Bool *) is_null)) = 1;
+    return NULL;
+  }
+}
+
+/* llvalue * int -> llvalue */
+LLVMValueRef llvm_const_element(LLVMValueRef Val, Int32 N) {
+  return LLVMGetElementAsConstant(Val, N);
+}
