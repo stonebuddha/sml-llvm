@@ -217,6 +217,10 @@ int llvm_thread_local_mode(void *);
 void llvm_set_thread_local_mode(int, void *);
 int llvm_is_externally_initialized(void *);
 void llvm_set_externally_initialized(int, void *);
+void *llvm_global_begin(void *, int *);
+void *llvm_global_succ(void *, int *);
+void *llvm_global_end(void *, int *);
+void *llvm_global_pred(void *, int *);
 
 void *llvm_add_alias(void *, void *, void *, const char *);
 
@@ -229,6 +233,10 @@ int llvm_function_call_conv(void *);
 void llvm_set_function_call_conv(int, void *);
 const char *llvm_gc(void *);
 void llvm_set_gc(const char *, void *);
+void *llvm_function_begin(void *, int *);
+void *llvm_function_succ(void *, int *);
+void *llvm_function_end(void *, int *);
+void *llvm_function_pred(void *, int *);
 void llvm_add_function_attr(void *, int);
 void llvm_remove_function_attr(void *, int);
 int llvm_function_attr(void *);

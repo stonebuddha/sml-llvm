@@ -73,6 +73,43 @@ datatype t =
          | Common
          | Linker_private
          | Linker_private_weak
+
+fun fromInt 0 = External
+  | fromInt 1 = Available_externally
+  | fromInt 2 = Link_once
+  | fromInt 3 = Link_once_odr
+  | fromInt 4 = Link_once_odr_auto_hide
+  | fromInt 5 = Weak
+  | fromInt 6 = Weak_odr
+  | fromInt 7 = Appending
+  | fromInt 8 = Internal
+  | fromInt 9 = Private
+  | fromInt 10 = Dllimport
+  | fromInt 11 = Dllexport
+  | fromInt 12 = External_weak
+  | fromInt 13 = Ghost
+  | fromInt 14 = Common
+  | fromInt 15 = Linker_private
+  | fromInt 16 = Linker_private_weak
+  | fromInt _ = raise (Fail "Linkage.fromInt")
+
+fun toInt External = 0
+  | toInt Available_externally = 1
+  | toInt Link_once = 2
+  | toInt Link_once_odr = 3
+  | toInt Link_once_odr_auto_hide = 4
+  | toInt Weak = 5
+  | toInt Weak_odr = 6
+  | toInt Appending = 7
+  | toInt Internal = 8
+  | toInt Private = 9
+  | toInt Dllimport = 10
+  | toInt Dllexport = 11
+  | toInt External_weak = 12
+  | toInt Ghost = 13
+  | toInt Common = 14
+  | toInt Linker_private = 15
+  | toInt Linker_private_weak = 16
 end
 
 structure Visibility =
@@ -81,6 +118,15 @@ datatype t =
          Default
          | Hidden
          | Protected
+
+fun fromInt 0 = Default
+  | fromInt 1 = Hidden
+  | fromInt 2 = Protected
+  | fromInt _ = raise (Fail "Visibility.fromInt")
+
+fun toInt Default = 0
+  | toInt Hidden = 1
+  | toInt Protected = 2
 end
 
 structure DLLStorageClass =
@@ -89,6 +135,15 @@ datatype t =
          Default
          | DLLImport
          | DLLExport
+
+fun fromInt 0 = Default
+  | fromInt 1 = DLLImport
+  | fromInt 2 = DLLExport
+  | fromInt _ = raise (Fail "DLLStorageClass.fromInt")
+
+fun toInt Default = 0
+  | toInt DLLImport = 1
+  | toInt DLLExport = 2
 end
 
 structure CallConv =
@@ -343,6 +398,19 @@ datatype t =
          | LocalDynamic
          | InitialExec
          | LocalExec
+
+fun fromInt 0 = None
+  | fromInt 1 = GeneralDynamic
+  | fromInt 2 = LocalDynamic
+  | fromInt 3 = InitialExec
+  | fromInt 4 = LocalExec
+  | fromInt _ = raise (Fail "ThreadLocalMode.fromInt")
+
+fun toInt None = 0
+  | toInt GeneralDynamic = 1
+  | toInt LocalDynamic = 2
+  | toInt InitialExec = 3
+  | toInt LocalExec = 4
 end
 
 structure AtomicOrdering =
@@ -436,6 +504,14 @@ datatype t =
          | Remark
          | Note
 end
+
+datatype ('a, 'b) llpos =
+         At_end of 'a
+         | Before of 'b
+
+datatype ('a, 'b) llrev_pos =
+         At_start of 'a
+         | After of 'b
 
 (*===-- Contexts ----------------------------------------------------------===*)
 fun create_context () : llcontext = F_llvm_create_context.f ()
@@ -1096,12 +1172,333 @@ fun const_inline_asm (Ty : lltype) (Asm : string) (Constraints : string) (HasSid
 fun block_address (Val : llvalue) (BB : llbasicblock) : llvalue = F_llvm_block_address.f (Val, BB)
 
 (*--... Operations on global variables, functions, and aliases (globals) ...--*)
+fun global_parent (Global : llvalue) : llmodule = F_llvm_global_parent.f Global
+fun is_declaration (Global : llvalue) : bool =
+  case F_llvm_is_declaration.f Global of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "is_declaration")
+fun linkage (Global : llvalue) : Linkage.t = Linkage.fromInt $ Int32.toInt $ F_llvm_linkage.f Global
+fun set_linkage (Linkage : Linkage.t) (Global : llvalue) : unit = F_llvm_set_linkage.f (Int32.fromInt $ Linkage.toInt Linkage, Global)
+fun unnamed_addr (Global : llvalue) : bool =
+  case F_llvm_unnamed_addr.f Global of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "unnamed_addr")
+fun set_unnamed_addr (UseUnnamedAddr : bool) (Global : llvalue) : unit = F_llvm_set_unnamed_addr.f (if UseUnnamedAddr then 1 else 0, Global)
+fun section (Global : llvalue) : string =
+  let
+      val S = F_llvm_section.f Global
+  in
+      ZString.toML S
+      before
+      C.free S
+  end
+fun set_section (Section : string) (Global : llvalue) : unit =
+  let
+      val Section' = ZString.dupML Section
+  in
+      F_llvm_set_section.f (Section', Global)
+      before
+      C.free Section'
+  end
+fun visibility (Global : llvalue) : Visibility.t = Visibility.fromInt $ Int32.toInt $ F_llvm_visibility.f Global
+fun set_visibility (Viz : Visibility.t) (Global : llvalue) : unit = F_llvm_set_visibility.f (Int32.fromInt $ Visibility.toInt Viz, Global)
+fun dll_storage_class (Global : llvalue) : DLLStorageClass.t = DLLStorageClass.fromInt $ Int32.toInt $ F_llvm_dll_storage_class.f Global
+fun set_dll_storage_class (Viz : DLLStorageClass.t) (Global : llvalue) : unit = F_llvm_set_dll_storage_class.f (Int32.fromInt $ DLLStorageClass.toInt Viz, Global)
+fun alignment (Global : llvalue) : int = Int32.toInt $ F_llvm_alignment.f Global
+fun set_alignment (Bytes : int) (Global : llvalue) : unit = F_llvm_set_alignment.f (Int32.fromInt Bytes, Global)
 
 (*--... Operations on global variables .....................................--*)
+fun declare_global (Ty : lltype) (Name : string) (M : llmodule) : llvalue =
+  let
+      val Name' = ZString.dupML Name
+  in
+      F_llvm_declare_global.f (Ty, Name', M)
+      before
+      C.free Name'
+  end
+fun declare_qualified_global (Ty : lltype) (Name : string) (AddrSpace : int) (M : llmodule) : llvalue =
+  let
+      val Name' = ZString.dupML Name
+  in
+      F_llvm_declare_qualified_global.f (Ty, Name', Int32.fromInt AddrSpace, M)
+      before
+      C.free Name'
+  end
+fun define_global (Name : string) (Initializer : llvalue) (M : llmodule) : llvalue =
+  let
+      val Name' = ZString.dupML Name
+  in
+      F_llvm_define_global.f (Name', Initializer, M)
+      before
+      C.free Name'
+  end
+fun define_qualified_global (Name : string) (Initializer : llvalue) (AddrSpace : int) (M : llmodule) : llvalue =
+  let
+      val Name' = ZString.dupML Name
+  in
+      F_llvm_define_qualified_global.f (Name', Initializer, Int32.fromInt AddrSpace, M)
+      before
+      C.free Name'
+  end
+fun lookup_global (Name : string) (M : llmodule) : llvalue option =
+  let
+      val Name' = ZString.dupML Name
+      val Res = F_llvm_lookup_global.f (Name', M)
+  in
+      (if C.Ptr.isNull' Res then NONE else SOME Res)
+      before
+      C.free Name'
+  end
+fun delete_global (GlobalVar : llvalue) : unit = F_llvm_delete_global.f GlobalVar
+fun global_initializer (GlobalVar : llvalue) : llvalue = F_llvm_global_initializer.f GlobalVar
+fun set_initializer (ConstantVal : llvalue) (GlobalVar : llvalue) : unit = F_llvm_set_initializer.f (ConstantVal, GlobalVar)
+fun remove_initializer (GlobalVar : llvalue) : unit = F_llvm_remove_initializer.f GlobalVar
+fun is_thread_local (GlobalVar : llvalue) : bool =
+  case F_llvm_is_thread_local.f GlobalVar of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "is_thread_local")
+fun set_thread_local (IsThreadLocal : bool) (GlobalVar : llvalue) : unit = F_llvm_set_thread_local.f (if IsThreadLocal then 1 else 0, GlobalVar)
+fun thread_local_mode (GlobalVar : llvalue) : ThreadLocalMode.t = ThreadLocalMode.fromInt $ Int32.toInt $ F_llvm_thread_local_mode.f GlobalVar
+fun set_thread_local_mode (ThreadLocalMode : ThreadLocalMode.t) (GlobalVar : llvalue) : unit = F_llvm_set_thread_local_mode.f (Int32.fromInt $ ThreadLocalMode.toInt ThreadLocalMode, GlobalVar)
+fun is_externally_initialized (GlobalVar : llvalue) : bool =
+  case F_llvm_is_externally_initialized.f GlobalVar of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "is_externally_initialized")
+fun set_externally_initialized (IsExternallyInitialized : bool) (GlobalVar : llvalue) : unit = F_llvm_set_externally_initialized.f (if IsExternallyInitialized then 1 else 0, GlobalVar)
+fun global_begin (M : llmodule) : (llmodule, llvalue) llpos =
+  let
+      val Tag = C.new C.T.sint
+      val Res = F_llvm_global_begin.f (M, C.Ptr.|&| Tag)
+  in
+      (case C.Get.sint Tag of
+           0 => At_end Res
+         | 1 => Before Res
+         | _ => raise (Fail "global_begin"))
+      before
+      C.free (C.Ptr.|&| Tag)
+  end
+fun global_succ (Val : llvalue) : (llmodule, llvalue) llpos =
+  let
+      val Tag = C.new C.T.sint
+      val Res = F_llvm_global_succ.f (Val, C.Ptr.|&| Tag)
+  in
+      (case C.Get.sint Tag of
+           0 => At_end Res
+         | 1 => Before Res
+         | _ => raise (Fail "global_succ"))
+      before
+      C.free (C.Ptr.|&| Tag)
+  end
+fun global_end (M : llmodule) : (llmodule, llvalue) llrev_pos =
+  let
+      val Tag = C.new C.T.sint
+      val Res = F_llvm_global_end.f (M, C.Ptr.|&| Tag)
+  in
+      (case C.Get.sint Tag of
+           0 => At_start Res
+         | 1 => After Res
+         | _ => raise (Fail "global_end"))
+      before
+      C.free (C.Ptr.|&| Tag)
+  end
+fun global_pred (Val : llvalue) : (llmodule, llvalue) llrev_pos =
+  let
+      val Tag = C.new C.T.sint
+      val Res = F_llvm_global_pred.f (Val, C.Ptr.|&| Tag)
+  in
+      (case C.Get.sint Tag of
+           0 => At_start Res
+         | 1 => After Res
+         | _ => raise (Fail "global_pred"))
+      before
+      C.free (C.Ptr.|&| Tag)
+  end
+
+fun iter_global_range f i e =
+  if i = e then () else
+  case i of
+      At_end _ => raise (Fail "Invalid global variable range.")
+    | Before bb => (f bb; iter_global_range f (global_succ bb) e)
+
+fun iter_globals f m = iter_global_range f (global_begin m) (At_end m)
+
+fun fold_left_global_range f init i e =
+  if i = e then init else
+  case i of
+      At_end _ => raise (Fail "Invalid global variable range.")
+    | Before bb => fold_left_global_range f (f init bb) (global_succ bb) e
+
+fun fold_left_globals f init m = fold_left_global_range f init (global_begin m) (At_end m)
+
+fun rev_iter_global_range f i e =
+  if i = e then () else
+  case i of
+      At_start _ => raise (Fail "Invalid global variable range.")
+    | After bb => (f bb; rev_iter_global_range f (global_pred bb) e)
+
+fun rev_iter_globals f m = rev_iter_global_range f (global_end m) (At_start m)
+
+fun fold_right_global_range f i e init =
+  if i = e then init else
+  case i of
+      At_start _ => raise (Fail "Invalid global variable range.")
+    | After bb => fold_right_global_range f (global_pred bb) e (f bb init)
+
+fun fold_right_globals f m init = fold_right_global_range f (global_end m) (At_start m) init
 
 (*--... Operations on aliases ..............................................--*)
+fun add_alias (M : llmodule) (Ty : lltype) (Aliasee : llvalue) (Name : string) : llvalue =
+  let
+      val Name' = ZString.dupML Name
+  in
+      F_llvm_add_alias.f (M, Ty, Aliasee, Name')
+      before
+      C.free Name'
+  end
 
 (*--... Operations on functions ............................................--*)
+fun declare_function (Name : string) (Ty : lltype) (M : llmodule) : llvalue =
+  let
+      val Name' = ZString.dupML Name
+  in
+      F_llvm_declare_function.f (Name', Ty, M)
+      before
+      C.free Name'
+  end
+fun define_function (Name : string) (Ty : lltype) (M : llmodule) : llvalue =
+  let
+      val Name' = ZString.dupML Name
+  in
+      F_llvm_define_function.f (Name', Ty, M)
+      before
+      C.free Name'
+  end
+fun lookup_function (Name : string) (M : llmodule) : llvalue option =
+  let
+      val Name' = ZString.dupML Name
+      val Res = F_llvm_lookup_function.f (Name', M)
+  in
+      (if C.Ptr.isNull' Res then NONE else SOME Res)
+      before
+      C.free Name'
+  end
+fun delete_function (Fn : llvalue) : unit = F_llvm_delete_function.f Fn
+fun is_intrinsic (Fn : llvalue) : bool =
+  case F_llvm_is_intrinsic.f Fn of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "is_intrinsic")
+fun function_call_conv (Fn : llvalue) : int = Int32.toInt $ F_llvm_function_call_conv.f Fn
+fun set_function_call_conv (Id : int) (Fn : llvalue) : unit = F_llvm_set_function_call_conv.f (Int32.fromInt Id, Fn)
+fun gc (Fn : llvalue) : string option =
+  let
+      val S = F_llvm_gc.f Fn
+  in
+      if C.Ptr.isNull S then NONE
+      else
+          SOME (ZString.toML S)
+          before
+          C.free S
+  end
+fun set_gc (GC : string option) (Fn : llvalue) : unit =
+  case GC of
+      NONE => F_llvm_set_gc.f (C.Ptr.null $ C.T.ro $ C.T.pointer C.T.uchar, Fn)
+    | SOME S =>
+      let
+          val S' = ZString.dupML S
+      in
+          F_llvm_set_gc.f (S', Fn)
+          before
+          C.free S'
+      end
+fun function_begin (M : llmodule) : (llmodule, llvalue) llpos =
+  let
+      val Tag = C.new C.T.sint
+      val Res = F_llvm_function_begin.f (M, C.Ptr.|&| Tag)
+  in
+      (case C.Get.sint Tag of
+           0 => At_end Res
+         | 1 => Before Res
+         | _ => raise (Fail "function_begin"))
+      before
+      C.free (C.Ptr.|&| Tag)
+  end
+fun function_succ (Val : llvalue) : (llmodule, llvalue) llpos =
+  let
+      val Tag = C.new C.T.sint
+      val Res = F_llvm_function_succ.f (Val, C.Ptr.|&| Tag)
+  in
+      (case C.Get.sint Tag of
+           0 => At_end Res
+         | 1 => Before Res
+         | _ => raise (Fail "function_succ"))
+      before
+      C.free (C.Ptr.|&| Tag)
+  end
+fun function_end (M : llmodule) : (llmodule, llvalue) llrev_pos =
+  let
+      val Tag = C.new C.T.sint
+      val Res = F_llvm_function_end.f (M, C.Ptr.|&| Tag)
+  in
+      (case C.Get.sint Tag of
+           0 => At_start Res
+         | 1 => After Res
+         | _ => raise (Fail "function_end"))
+      before
+      C.free (C.Ptr.|&| Tag)
+  end
+fun function_pred (Val : llvalue) : (llmodule, llvalue) llrev_pos =
+  let
+      val Tag = C.new C.T.sint
+      val Res = F_llvm_function_pred.f (Val, C.Ptr.|&| Tag)
+  in
+      (case C.Get.sint Tag of
+           0 => At_start Res
+         | 1 => After Res
+         | _ => raise (Fail "function_pred"))
+      before
+      C.free (C.Ptr.|&| Tag)
+  end
+
+fun iter_function_range f i e =
+  if i = e then () else
+  case i of
+      At_end _ => raise (Fail "Invalid function range.")
+    | Before func => (f func; iter_function_range f (function_succ func) e)
+
+fun iter_functions f m = iter_function_range f (function_begin m) (At_end m)
+
+fun fold_left_function_range f init i e =
+  if i = e then init else
+  case i of
+      At_end _ => raise (Fail "Invalid function range.")
+    | Before func => fold_left_function_range f (f init func) (function_succ func) e
+
+fun fold_left_functions f init m = fold_left_function_range f init (function_begin m) (At_end m)
+
+fun rev_iter_function_range f i e =
+  if i = e then () else
+  case i of
+      At_start _ => raise (Fail "Invalid function range.")
+    | After func => (f func; rev_iter_function_range f (function_pred func) e)
+
+fun rev_iter_functions f m = rev_iter_function_range f (function_end m) (At_start m)
+
+fun fold_right_function_range f i e init =
+  if i = e then init else
+  case i of
+      At_start _ => raise (Fail "Invalid function range.")
+    | After func => fold_right_function_range f (function_pred func) e (f func init)
+
+fun fold_right_functions f m init = fold_right_function_range f (function_end m) (At_start m) init
+
+fun llvm_add_function_attr (Arg : llvalue) (PA : Int32.int) : unit = F_llvm_add_function_attr.f (Arg, PA)
+fun llvm_remove_function_attr (Arg : llvalue) (PA : Int32.int) : unit = F_llvm_remove_function_attr.f (Arg, PA)
+fun llvm_function_attr (Fn : llvalue) : Int32.int = F_llvm_function_attr.f Fn
 
 (*--... Operations on par AMS ...............................................--*)
 
