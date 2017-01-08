@@ -1,4 +1,4 @@
-structure LlvmCore (*:> LLVM_CORE*) =
+structure LlvmCore :> LLVM_CORE =
 struct
 
 infixr 0 $
@@ -1259,6 +1259,12 @@ fun dll_storage_class (Global : llvalue) : DLLStorageClass.t = DLLStorageClass.f
 fun set_dll_storage_class (Viz : DLLStorageClass.t) (Global : llvalue) : unit = F_llvm_set_dll_storage_class.f (Int32.fromInt $ DLLStorageClass.toInt Viz, Global)
 fun alignment (Global : llvalue) : int = Int32.toInt $ F_llvm_alignment.f Global
 fun set_alignment (Bytes : int) (Global : llvalue) : unit = F_llvm_set_alignment.f (Int32.fromInt Bytes, Global)
+fun is_global_constant (Val : llvalue) : bool =
+  case F_llvm_is_global_constant.f Val of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "is_global_constant")
+fun set_global_constant (IsConstant : bool) (Val : llvalue) : unit = F_llvm_set_global_constant.f (if IsConstant then 1 else 0, Val)
 
 (*--... Operations on global variables .....................................--*)
 fun declare_global (Ty : lltype) (Name : string) (M : llmodule) : llvalue =
@@ -1972,7 +1978,7 @@ fun set_instruction_call_conv (CC : int) (Inst : llvalue) : unit = F_llvm_set_in
 fun llvm_add_instruction_param_attr (Inst : llvalue) (Index : int) (PA : Int32.int) : unit = F_llvm_add_instruction_param_attr.f (Inst, Int32.fromInt Index, PA)
 fun llvm_remove_instrution_param_attr (Inst : llvalue) (Index : int) (PA : Int32.int) : unit = F_llvm_remove_instruction_param_attr.f (Inst, Int32.fromInt Index, PA)
 
-fun add_instructin_param_attr (Inst : llvalue) (Index : int) (PA : Attribute.t) : unit = llvm_add_instruction_param_attr Inst Index (pack_attr PA)
+fun add_instruction_param_attr (Inst : llvalue) (Index : int) (PA : Attribute.t) : unit = llvm_add_instruction_param_attr Inst Index (pack_attr PA)
 fun remove_instruction_param_attr (Inst : llvalue) (Index : int) (PA : Attribute.t) : unit = llvm_remove_instrution_param_attr Inst Index (pack_attr PA)
 
 (*--... Operations on call instructions (only) .............................--*)
