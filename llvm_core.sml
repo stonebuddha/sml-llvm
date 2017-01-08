@@ -452,8 +452,17 @@ datatype t =
          | Invalid
          | Acquire
          | Release
-         | AcqiureRelease
+         | AcquireRelease
          | SequentiallyConsistent
+
+fun toInt NotAtomic = 0
+  | toInt Unordered = 1
+  | toInt Monotonic = 2
+  | toInt Invalid = 3
+  | toInt Acquire = 4
+  | toInt Release = 5
+  | toInt AcquireRelease = 6
+  | toInt SequentiallyConsistent = 7
 end
 
 structure AtomicRMWBinOp =
@@ -470,6 +479,18 @@ datatype t =
          | Min
          | UMax
          | UMin
+
+fun toInt Xchg = 0
+  | toInt Add = 1
+  | toInt Sub = 2
+  | toInt And = 3
+  | toInt Nand = 4
+  | toInt Or = 5
+  | toInt Xor = 6
+  | toInt Max = 7
+  | toInt Min = 8
+  | toInt UMax = 9
+  | toInt UMin = 10
 end
 
 structure ValueKind =
@@ -2103,27 +2124,804 @@ fun current_debug_location (B : llbuilder) : llvalue option =
 fun set_inst_debug_location (B : llbuilder) (Inst : llvalue) : unit = F_llvm_set_inst_debug_location.f (B, Inst)
 
 (*--... Terminators ........................................................--*)
+val build_ret_void : llbuilder -> llvalue = fn B => F_llvm_build_ret_void.f B
+val build_ret : llvalue -> llbuilder -> llvalue = fn Val => fn B => F_llvm_build_ret.f (Val, B)
+val build_aggregate_ret : llvalue array -> llbuilder -> llvalue =
+ fn RetVals => fn B =>
+    let
+        val RetVals' = dupVPtrArr RetVals
+    in
+        F_llvm_build_aggregate_ret.f (RetVals', Int32.fromInt $ Array.length RetVals, B)
+        before
+        C.free RetVals'
+    end
+val build_br : llbasicblock -> llbuilder -> llvalue = fn BB => fn B => F_llvm_build_br.f (BB, B)
+val build_cond_br : llvalue -> llbasicblock -> llbasicblock -> llbuilder -> llvalue = fn If => fn Then => fn Else => fn B => F_llvm_build_cond_br.f (If, Then, Else, B)
+val build_switch : llvalue -> llbasicblock -> int -> llbuilder -> llvalue = fn Of => fn Else => fn EstimatedCount => fn B => F_llvm_build_switch.f (Of, Else, Int32.fromInt EstimatedCount, B)
+val build_malloc : lltype -> string -> llbuilder -> llvalue =
+ fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_malloc.f (Ty, Name', B)
+        before
+        C.free Name'
+    end
+val build_array_malloc : lltype -> llvalue -> string -> llbuilder -> llvalue =
+ fn Ty => fn Val => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_array_malloc.f (Ty, Val, Name', B)
+        before
+        C.free Name'
+    end
+val build_free : llvalue -> llbuilder -> llvalue = fn P => fn B => F_llvm_build_free.f (P, B)
+val add_case : llvalue -> llvalue -> llbasicblock -> unit = fn Switch => fn OnVal => fn Dest => F_llvm_add_case.f (Switch, OnVal, Dest)
+val switch_default_dest : llvalue -> llbasicblock = fn Inst => F_llvm_switch_default_dest.f Inst
+val build_indirect_br : llvalue -> int -> llbuilder -> llvalue = fn Addr => fn EstimatedDests => fn B => F_llvm_build_indirect_br.f (Addr, Int32.fromInt EstimatedDests, B)
+val add_destination : llvalue -> llbasicblock -> unit = fn IndirectBr => fn Dest => F_llvm_add_destination.f (IndirectBr, Dest)
+val build_invoke : llvalue -> llvalue array -> llbasicblock -> llbasicblock -> string -> llbuilder -> llvalue =
+ fn Fn => fn Args => fn Then => fn Catch => fn Name => fn B =>
+    let
+        val Args' = dupVPtrArr Args
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_invoke.f (Fn, Args', Int32.fromInt $ Array.length Args, Then, Catch, Name', B)
+        before
+        (C.free Args'; C.free Name')
+    end
+val build_landingpad : lltype -> llvalue -> int -> string -> llbuilder -> llvalue =
+ fn Ty => fn PersFn => fn NumClauses => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_landingpad.f (Ty, PersFn, Int32.fromInt NumClauses, Name', B)
+        before
+        C.free Name'
+    end
+val set_cleanup : llvalue -> bool -> unit = fn LandingPadInst => fn flag => F_llvm_set_cleanup.f (LandingPadInst, if flag then 1 else 0)
+val add_clause : llvalue -> llvalue -> unit = fn LandingPadInst => fn ClauseVal => F_llvm_add_clause.f (LandingPadInst, ClauseVal)
+val build_resume : llvalue -> llbuilder -> llvalue = fn Exn => fn B => F_llvm_build_resume.f (Exn, B)
+val build_unreachable : llbuilder -> llvalue = fn B => F_llvm_build_unreachable.f B
 
 (*--... Arithmetic .........................................................--*)
+val build_add : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_add.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_nsw_add : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_nsw_add.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_nuw_add : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_nuw_add.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_fadd : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_fadd.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_sub : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_sub.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_nsw_sub : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_nsw_sub.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_nuw_sub : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_nuw_sub.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_fsub : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_fsub.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_mul : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_mul.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_nsw_mul : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_nsw_mul.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_nuw_mul : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_nuw_mul.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_fmul : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_fmul.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_udiv : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_udiv.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_sdiv : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_sdiv.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_exact_sdiv : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_exact_sdiv.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_fdiv : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_fdiv.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_urem : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_urem.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_srem : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_srem.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_frem : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_frem.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_shl : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_shl.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_lshr : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_lshr.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_ashr : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_ashr.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_and : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_and.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_or : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_or.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_xor : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_xor.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_neg : llvalue -> string -> llbuilder -> llvalue =
+ fn X => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_neg.f (X, Name', B)
+        before
+        C.free Name'
+    end
+val build_nsw_neg : llvalue -> string -> llbuilder -> llvalue =
+ fn X => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_nsw_neg.f (X, Name', B)
+        before
+        C.free Name'
+    end
+val build_nuw_neg : llvalue -> string -> llbuilder -> llvalue =
+ fn X => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_nuw_neg.f (X, Name', B)
+        before
+        C.free Name'
+    end
+val build_fneg : llvalue -> string -> llbuilder -> llvalue =
+ fn X => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_fneg.f (X, Name', B)
+        before
+        C.free Name'
+    end
+val build_not : llvalue -> string -> llbuilder -> llvalue =
+ fn X => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_not.f (X, Name', B)
+        before
+        C.free Name'
+    end
 
 (*--... Memory .............................................................--*)
+val build_alloca : lltype -> string -> llbuilder -> llvalue =
+ fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_alloca.f (Ty, Name', B)
+        before
+        C.free Name'
+    end
+val build_array_alloca : lltype -> llvalue -> string -> llbuilder -> llvalue =
+ fn Ty => fn Sz => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_array_alloca.f (Ty, Sz, Name', B)
+        before
+        C.free Name'
+    end
+val build_load : llvalue -> string -> llbuilder -> llvalue =
+ fn Ptr => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_load.f (Ptr, Name', B)
+        before
+        C.free Name'
+    end
+val build_store : llvalue -> llvalue -> llbuilder -> llvalue = fn Val => fn Ptr => fn B => F_llvm_build_store.f (Val, Ptr, B)
+val build_atomicrmw : AtomicRMWBinOp.t -> llvalue -> llvalue -> AtomicOrdering.t -> bool -> string -> llbuilder -> llvalue =
+ fn BinOp => fn Ptr => fn Val => fn Ord => fn ST => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_atomicrmw.f (Int32.fromInt $ AtomicRMWBinOp.toInt BinOp, Ptr, Val, Int32.fromInt $ AtomicOrdering.toInt Ord, if ST then 1 else 0, Name', B)
+        before
+        C.free Name'
+    end
+val build_gep : llvalue -> llvalue array -> string -> llbuilder -> llvalue =
+ fn Ptr => fn Indices => fn Name => fn B =>
+    let
+        val Indices' = dupVPtrArr Indices
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_gep.f (Ptr, Indices', Int32.fromInt $ Array.length Indices, Name', B)
+        before
+        (C.free Indices'; C.free Name')
+    end
+val build_in_bounds_gep : llvalue -> llvalue array -> string -> llbuilder -> llvalue =
+ fn Ptr => fn Indices => fn Name => fn B =>
+    let
+        val Indices' = dupVPtrArr Indices
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_in_bounds_gep.f (Ptr, Indices', Int32.fromInt $ Array.length Indices, Name', B)
+        before
+        (C.free Indices'; C.free Name')
+    end
+val build_struct_gep : llvalue -> int -> string -> llbuilder -> llvalue =
+ fn Ptr => fn Index => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_struct_gep.f (Ptr, Int32.fromInt Index, Name', B)
+        before
+        C.free Name'
+    end
+
+val build_global_string : string -> string -> llbuilder -> llvalue =
+ fn Str => fn Name => fn B =>
+    let
+        val Str' = ZString.dupML Str
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_global_string.f (Str', Name', B)
+        before
+        (C.free Str'; C.free Name')
+    end
+val build_global_stringptr : string -> string -> llbuilder -> llvalue =
+ fn Str => fn Name => fn B =>
+    let
+        val Str' = ZString.dupML Str
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_global_stringptr.f (Str', Name', B)
+        before
+        (C.free Str'; C.free Name')
+    end
 
 (*--... Casts ..............................................................--*)
+val build_trunc : llvalue -> lltype -> string -> llbuilder -> llvalue =
+ fn X => fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_trunc.f (X, Ty, Name', B)
+        before
+        C.free Name'
+    end
+val build_zext : llvalue -> lltype -> string -> llbuilder -> llvalue =
+ fn X => fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_zext.f (X, Ty, Name', B)
+        before
+        C.free Name'
+    end
+val build_sext : llvalue -> lltype -> string -> llbuilder -> llvalue =
+ fn X => fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_sext.f (X, Ty, Name', B)
+        before
+        C.free Name'
+    end
+val build_fptoui : llvalue -> lltype -> string -> llbuilder -> llvalue =
+ fn X => fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_fptoui.f (X, Ty, Name', B)
+        before
+        C.free Name'
+    end
+val build_fptosi : llvalue -> lltype -> string -> llbuilder -> llvalue =
+ fn X => fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_fptosi.f (X, Ty, Name', B)
+        before
+        C.free Name'
+    end
+val build_uitofp : llvalue -> lltype -> string -> llbuilder -> llvalue =
+ fn X => fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_uitofp.f (X, Ty, Name', B)
+        before
+        C.free Name'
+    end
+val build_sitofp : llvalue -> lltype -> string -> llbuilder -> llvalue =
+ fn X => fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_sitofp.f (X, Ty, Name', B)
+        before
+        C.free Name'
+    end
+val build_fptrunc : llvalue -> lltype -> string -> llbuilder -> llvalue =
+ fn X => fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_fptrunc.f (X, Ty, Name', B)
+        before
+        C.free Name'
+    end
+val build_fpext : llvalue -> lltype -> string -> llbuilder -> llvalue =
+ fn X => fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_fpext.f (X, Ty, Name', B)
+        before
+        C.free Name'
+    end
+val build_ptrtoint : llvalue -> lltype -> string -> llbuilder -> llvalue =
+ fn X => fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_ptrtoint.f (X, Ty, Name', B)
+        before
+        C.free Name'
+    end
+val build_inttoptr : llvalue -> lltype -> string -> llbuilder -> llvalue =
+ fn X => fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_inttoptr.f (X, Ty, Name', B)
+        before
+        C.free Name'
+    end
+val build_bitcast : llvalue -> lltype -> string -> llbuilder -> llvalue =
+ fn X => fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_bitcast.f (X, Ty, Name', B)
+        before
+        C.free Name'
+    end
+val build_zext_or_bitcast : llvalue -> lltype -> string -> llbuilder -> llvalue =
+ fn X => fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_zext_or_bitcast.f (X, Ty, Name', B)
+        before
+        C.free Name'
+    end
+val build_sext_or_bitcast : llvalue -> lltype -> string -> llbuilder -> llvalue =
+ fn X => fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_sext_or_bitcast.f (X, Ty, Name', B)
+        before
+        C.free Name'
+    end
+val build_trunc_or_bitcast : llvalue -> lltype -> string -> llbuilder -> llvalue =
+ fn X => fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_trunc_or_bitcast.f (X, Ty, Name', B)
+        before
+        C.free Name'
+    end
+val build_pointercast : llvalue -> lltype -> string -> llbuilder -> llvalue =
+ fn X => fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_pointercast.f (X, Ty, Name', B)
+        before
+        C.free Name'
+    end
+val build_intcast : llvalue -> lltype -> string -> llbuilder -> llvalue =
+ fn X => fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_intcast.f (X, Ty, Name', B)
+        before
+        C.free Name'
+    end
+val build_fpcast : llvalue -> lltype -> string -> llbuilder -> llvalue =
+ fn X => fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_fpcast.f (X, Ty, Name', B)
+        before
+        C.free Name'
+    end
 
 (*--... Comparisons ........................................................--*)
+val build_icmp : Icmp.t -> llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn Pred => fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_icmp.f (Int32.fromInt $ Icmp.toInt Pred, LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
+val build_fcmp : Fcmp.t -> llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn Pred => fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_fcmp.f (Int32.fromInt $ Fcmp.toInt Pred, LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
 
 (*--... Miscellaneous instructions .........................................--*)
+val build_phi : (llvalue * llbasicblock) list -> string -> llbuilder -> llvalue =
+ fn Incoming => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+        val (Vals, BBs) = ListPair.unzip Incoming
+        val Vals' = dupVPtrArr $ Array.fromList Vals
+        val BBs' = dupVPtrArr $ Array.fromList BBs
+    in
+        F_llvm_build_phi.f (Vals', BBs', Int32.fromInt $ List.length Incoming, Name', B)
+        before
+        (C.free Name'; C.free Vals'; C.free BBs')
+    end
+val build_empty_phi : lltype -> string -> llbuilder -> llvalue =
+ fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_empty_phi.f (Ty, Name', B)
+        before
+        C.free Name'
+    end
+val build_call : llvalue -> llvalue array -> string -> llbuilder -> llvalue =
+ fn Fn => fn Params => fn Name => fn B =>
+    let
+        val Params' = dupVPtrArr Params
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_call.f (Fn, Params', Int32.fromInt $ Array.length Params, Name', B)
+        before
+        (C.free Params'; C.free Name')
+    end
+val build_select : llvalue -> llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn If => fn Then => fn Else => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_select.f (If, Then, Else, Name', B)
+        before
+        C.free Name'
+    end
+val build_va_arg : llvalue -> lltype -> string -> llbuilder -> llvalue =
+ fn List => fn Ty => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_va_arg.f (List, Ty, Name', B)
+        before
+        C.free Name'
+    end
+val build_extractelement : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn Vec => fn Idx => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_extractelement.f (Vec, Idx, Name', B)
+        before
+        C.free Name'
+    end
+val build_insertelement : llvalue -> llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn Vec => fn Elem => fn Idx => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_insertelement.f (Vec, Elem, Idx, Name', B)
+        before
+        C.free Name'
+    end
+val build_shufflevector : llvalue -> llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn V1 => fn V2 => fn Mask => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_shufflevector.f (V1, V2, Mask, Name', B)
+        before
+        C.free Name'
+    end
+val build_extractvalue : llvalue -> int -> string -> llbuilder -> llvalue =
+ fn Aggregate => fn Idx => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_extractvalue.f (Aggregate, Int32.fromInt Idx, Name', B)
+        before
+        C.free Name'
+    end
+val build_insertvalue : llvalue -> llvalue -> int -> string -> llbuilder -> llvalue =
+ fn Aggregate => fn Val => fn Idx => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_insertvalue.f (Aggregate, Val, Int32.fromInt Idx, Name', B)
+        before
+        C.free Name'
+    end
+val build_is_null : llvalue -> string -> llbuilder -> llvalue =
+ fn Val => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_is_null.f (Val, Name', B)
+        before
+        C.free Name'
+    end
+val build_is_not_null : llvalue -> string -> llbuilder -> llvalue =
+ fn Val => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_is_not_null.f (Val, Name', B)
+        before
+        C.free Name'
+    end
+val build_ptrdiff : llvalue -> llvalue -> string -> llbuilder -> llvalue =
+ fn LHS => fn RHS => fn Name => fn B =>
+    let
+        val Name' = ZString.dupML Name
+    in
+        F_llvm_build_ptrdiff.f (LHS, RHS, Name', B)
+        before
+        C.free Name'
+    end
 
 (*===-- Memory buffers ----------------------------------------------------===*)
 
 structure MemoryBuffer =
 struct
+fun of_file (Path : string) : llmemorybuffer =
+  let
+      val Path' = ZString.dupML Path
+  in
+      F_llvm_memorybuffer_of_file.f (Path')
+      before
+      C.free Path'
+  end
+fun of_stdin () : llmemorybuffer = F_llvm_memorybuffer_of_stdin.f ()
+fun of_string (Name : string option) (Str : string) : llmemorybuffer =
+  let
+      val Str' = ZString.dupML Str
+  in
+      (case Name of
+           NONE => F_llvm_memorybuffer_of_string.f (C.Ptr.null $ C.T.ro $ C.T.pointer C.T.uchar, Str')
+         | SOME Name =>
+           let
+               val Name' = ZString.dupML Name
+           in
+               F_llvm_memorybuffer_of_string.f (Name', Str') before C.free Name'
+           end)
+      before
+      C.free Str'
+  end
+fun as_string (MemBuf : llmemorybuffer) : string =
+  let
+      val S = F_llvm_memorybuffer_as_string.f MemBuf
+  in
+      ZString.toML S
+      before
+      C.free S
+  end
+fun dispose (MemBuf : llmemorybuffer) : unit = F_llvm_memorybuffer_dispose.f MemBuf
 end
 
 (*===-- Pass Manager ------------------------------------------------------===*)
 
 structure PassManager =
 struct
+type Module = unit
+type Function = unit
+type 'a t = C.voidptr
+fun create () : Module t = F_llvm_passmanager_create.f ()
+fun create_function (M : llmodule) : Function t = F_llvm_passmanager_create_function.f M
+fun run_module (M : llmodule) (PM : Module t) : bool =
+  case F_llvm_passmanager_run_module.f (M, PM) of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "PassManager.run_module")
+fun initialize (FPM : Function t) : bool =
+  case F_llvm_passmanager_initialize.f FPM of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "PassManager.initialize")
+fun run_function (F : llvalue) (FPM : Function t) : bool =
+  case F_llvm_passmanager_run_function.f (F, FPM) of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "PassManager.run_function")
+fun finalize (FPM : Function t) : bool =
+  case F_llvm_passmanager_finalize.f FPM of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "PassManager.finalize")
+fun dispose (PM : 'a t) : unit = F_llvm_passmanager_dispose.f PM
 end
 
 end
