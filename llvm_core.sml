@@ -167,7 +167,7 @@ datatype t =
          | Noalias
          | Byval
          | Nest
-         | Readonce
+         | Readnone
          | Readonly
          | Noinline
          | Alwaysinline
@@ -210,6 +210,18 @@ fun toInt Eq = 0
   | toInt Sge = 7
   | toInt Slt = 8
   | toInt Sle = 9
+
+fun fromInt 0 = Eq
+  | fromInt 1 = Ne
+  | fromInt 2 = Ugt
+  | fromInt 3 = Uge
+  | fromInt 4 = Ult
+  | fromInt 5 = Ule
+  | fromInt 6 = Sgt
+  | fromInt 7 = Sge
+  | fromInt 8 = Slt
+  | fromInt 9 = Sle
+  | fromInt _ = raise (Fail "Icmp.fromInt")
 end
 
 structure Fcmp =
@@ -248,6 +260,24 @@ fun toInt False = 0
   | toInt Ule = 13
   | toInt Une = 14
   | toInt True = 15
+
+fun fromInt 0 = False
+  | fromInt 1 = Oeq
+  | fromInt 2 = Ogt
+  | fromInt 3 = Oge
+  | fromInt 4 = Olt
+  | fromInt 5 = Ole
+  | fromInt 6 = One
+  | fromInt 7 = Ord
+  | fromInt 8 = Uno
+  | fromInt 9 = Ueq
+  | fromInt 10 = Ugt
+  | fromInt 11 = Uge
+  | fromInt 12 = Ult
+  | fromInt 13 = Ule
+  | fromInt 14 = Une
+  | fromInt 15 = True
+  | fromInt _ = raise (Fail "Fcmp.fromInt")
 end
 
 structure Opcode =
@@ -1500,11 +1530,420 @@ fun llvm_add_function_attr (Arg : llvalue) (PA : Int32.int) : unit = F_llvm_add_
 fun llvm_remove_function_attr (Arg : llvalue) (PA : Int32.int) : unit = F_llvm_remove_function_attr.f (Arg, PA)
 fun llvm_function_attr (Fn : llvalue) : Int32.int = F_llvm_function_attr.f Fn
 
-(*--... Operations on par AMS ...............................................--*)
+fun pack_attr (attr : Attribute.t) : Int32.int =
+  case attr of
+      Attribute.Zext => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 0)
+    | Attribute.Sext => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 1)
+    | Attribute.Noreturn => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 2)
+    | Attribute.Inreg => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 3)
+    | Attribute.Structret => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 4)
+    | Attribute.Nounwind => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 5)
+    | Attribute.Noalias => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 6)
+    | Attribute.Byval => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 7)
+    | Attribute.Nest => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 8)
+    | Attribute.Readnone => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 9)
+    | Attribute.Readonly => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 10)
+    | Attribute.Noinline => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 11)
+    | Attribute.Alwaysinline => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 12)
+    | Attribute.Optsize => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 13)
+    | Attribute.Ssp => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 14)
+    | Attribute.Sspreq => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 15)
+    | Attribute.Alignment n => Int32.fromLarge $ IntInf.<< (IntInf.fromInt n, Word.fromInt 16)
+    | Attribute.Nocapture => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 21)
+    | Attribute.Noredzone => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 22)
+    | Attribute.Noimplicitfloat => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 23)
+    | Attribute.Naked => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 24)
+    | Attribute.Inlinehint => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 25)
+    | Attribute.Stackalignment n => Int32.fromLarge $ IntInf.<< (IntInf.fromInt n, Word.fromInt 26)
+    | Attribute.ReturnsTwice => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 29)
+    | Attribute.UWTable => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 30)
+    | Attribute.NonLazyBind => Int32.fromLarge $ IntInf.<< (1, Word.fromInt 31)
+
+fun unpack_attr (a : Int32.int) : Attribute.t list =
+  let
+      val l = ref []
+      fun check attr = IntInf.andb (Int32.toLarge (pack_attr attr), Int32.toLarge a)
+      fun checkattr attr = if (check attr) <> 0 then l := attr :: !l else ()
+      val () = checkattr Attribute.Zext
+      val () = checkattr Attribute.Sext
+      val () = checkattr Attribute.Noreturn
+      val () = checkattr Attribute.Inreg
+      val () = checkattr Attribute.Structret
+      val () = checkattr Attribute.Nounwind
+      val () = checkattr Attribute.Noalias
+      val () = checkattr Attribute.Byval
+      val () = checkattr Attribute.Nest
+      val () = checkattr Attribute.Readnone
+      val () = checkattr Attribute.Readonly
+      val () = checkattr Attribute.Noinline
+      val () = checkattr Attribute.Alwaysinline
+      val () = checkattr Attribute.Optsize
+      val () = checkattr Attribute.Ssp
+      val () = checkattr Attribute.Sspreq
+      val align = IntInf.andb (IntInf.~>> (Int32.toLarge a, Word.fromInt 16), 31)
+      val () = if align <> 0 then l := Attribute.Alignment (IntInf.toInt align) :: !l else ()
+      val () = checkattr Attribute.Nocapture
+      val () = checkattr Attribute.Noredzone
+      val () = checkattr Attribute.Noimplicitfloat
+      val () = checkattr Attribute.Naked
+      val () = checkattr Attribute.Inlinehint
+      val stackalign = IntInf.andb (IntInf.~>> (Int32.toLarge a, Word.fromInt 26), 7)
+      val () = if stackalign <> 0 then l := Attribute.Stackalignment (IntInf.toInt stackalign) :: !l else ()
+      val () = checkattr Attribute.ReturnsTwice
+      val () = checkattr Attribute.UWTable
+      val () = checkattr Attribute.NonLazyBind
+  in
+      !l
+  end
+
+fun add_function_attr (Val : llvalue) (PA : Attribute.t) : unit = llvm_add_function_attr Val (pack_attr PA)
+fun remove_function_attr (Val : llvalue) (PA : Attribute.t) : unit = llvm_remove_function_attr Val (pack_attr PA)
+fun function_attr (Fn : llvalue) : Attribute.t list = unpack_attr $ llvm_function_attr Fn
+
+fun add_target_dependent_function_attr (Arg : llvalue) (A : string) (V : string) : unit =
+  let
+      val A' = ZString.dupML A
+      val V' = ZString.dupML V
+  in
+      F_llvm_add_target_dependent_function_attr.f (Arg, A', V')
+      before
+      (C.free A'; C.free V')
+  end
+
+(*--... Operations on params ...............................................--*)
+fun params (Fn : llvalue) : llvalue array =
+  let
+      val Len = C.new C.T.sint
+      val Buf = F_llvm_params.f (Fn, C.Ptr.|&| Len)
+  in
+      toVPtrArr Buf Len
+      before
+      (C.free Buf; C.free (C.Ptr.|&| Len))
+  end
+fun param (Fn : llvalue) (Index : int) : llvalue = F_llvm_param.f (Fn, Int32.fromInt Index)
+fun llvm_param_attr (Param : llvalue) : Int32.int = F_llvm_param_attr.f Param
+fun param_attr (Param : llvalue) : Attribute.t list = unpack_attr $ llvm_param_attr Param
+fun param_parent (Param : llvalue) : llvalue = F_llvm_param_parent.f Param
+fun param_begin (Fn : llvalue) : (llvalue, llvalue) llpos =
+  let
+      val Tag = C.new C.T.sint
+      val Res = F_llvm_param_begin.f (Fn, C.Ptr.|&| Tag)
+  in
+      (case C.Get.sint Tag of
+           0 => At_end Res
+         | 1 => Before Res
+         | _ => raise (Fail "param_begin"))
+      before
+      C.free (C.Ptr.|&| Tag)
+  end
+fun param_succ (Param : llvalue) : (llvalue, llvalue) llpos =
+  let
+      val Tag = C.new C.T.sint
+      val Res = F_llvm_param_succ.f (Param, C.Ptr.|&| Tag)
+  in
+      (case C.Get.sint Tag of
+           0 => At_end Res
+         | 1 => Before Res
+         | _ => raise (Fail "param_succ"))
+      before
+      C.free (C.Ptr.|&| Tag)
+  end
+fun param_end (Fn : llvalue) : (llvalue, llvalue) llrev_pos =
+  let
+      val Tag = C.new C.T.sint
+      val Res = F_llvm_param_end.f (Fn, C.Ptr.|&| Tag)
+  in
+      (case C.Get.sint Tag of
+           0 => At_start Res
+         | 1 => After Res
+         | _ => raise (Fail "param_end"))
+      before
+      C.free (C.Ptr.|&| Tag)
+  end
+fun param_pred (Param : llvalue)  : (llvalue, llvalue) llrev_pos =
+  let
+      val Tag = C.new C.T.sint
+      val Res = F_llvm_param_pred.f (Param, C.Ptr.|&| Tag)
+  in
+      (case C.Get.sint Tag of
+           0 => At_start Res
+         | 1 => After Res
+         | _ => raise (Fail "param_pred"))
+      before
+      C.free (C.Ptr.|&| Tag)
+  end
+
+fun iter_param_range f i e =
+  if i = e then () else
+  case i of
+      At_end _ => raise (Fail "Invalid parameter range.")
+    | Before p => (f p; iter_param_range f (param_succ p) e)
+
+fun iter_params f func = iter_param_range f (param_begin func) (At_end func)
+
+fun fold_left_param_range f init i e =
+  if i = e then init else
+  case i of
+      At_end _ => (raise (Fail "Invalid parameter range."))
+    | Before p => fold_left_param_range f (f init p) (param_succ p) e
+
+fun fold_left_params f init func = fold_left_param_range f init (param_begin func) (At_end func)
+
+fun rev_iter_param_range f i e =
+  if i = e then () else
+  case i of
+      At_start _ => raise (Fail "Invalid parameter range.")
+    | After p => (f p; rev_iter_function_range f (param_pred p) e)
+
+fun rev_iter_params f func = rev_iter_param_range f (param_end func) (At_start func)
+
+fun fold_right_param_range f init i e =
+  if i = e then init else
+  case i of
+      At_start _ => raise (Fail "Invalid parameter range.")
+    | After p => fold_right_param_range f (f p init) (param_pred p) e
+
+fun fold_right_params f func init = fold_right_param_range f init (param_end func) (At_start func)
+
+fun llvm_add_param_attr (Arg : llvalue) (PA : Int32.int) : unit = F_llvm_add_param_attr.f (Arg, PA)
+fun llvm_remove_param_attr (Arg : llvalue) (PA : Int32.int) : unit = F_llvm_remove_param_attr.f (Arg, PA)
+
+fun add_param_attr (Arg : llvalue) (PA : Attribute.t) : unit = llvm_add_param_attr Arg (pack_attr PA)
+fun remove_param_attr (Arg : llvalue) (PA : Attribute.t) : unit = llvm_remove_param_attr Arg (pack_attr PA)
+
+fun set_param_alignment (Arg : llvalue) (Align : int) : unit = F_llvm_set_param_alignment.f (Arg, Int32.fromInt Align)
 
 (*--... Operations on basic blocks .........................................--*)
+fun value_of_block (BB : llbasicblock) : llvalue = F_llvm_value_of_block.f BB
+fun value_is_block (Val : llvalue) : bool =
+  case F_llvm_value_is_block.f Val of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "value_is_block")
+fun block_of_value (Val : llvalue) : llbasicblock = F_llvm_block_of_value.f Val
+fun block_parent (BB : llbasicblock) : llvalue = F_llvm_block_parent.f BB
+fun basic_blocks (Fn : llvalue) : llbasicblock array =
+  let
+      val Len = C.new C.T.sint
+      val Buf = F_llvm_basic_blocks.f (Fn, C.Ptr.|&| Len)
+  in
+      toVPtrArr Buf Len
+      before
+      (C.free Buf; C.free (C.Ptr.|&| Len))
+  end
+fun entry_block (Val : llvalue) : llbasicblock = F_llvm_entry_block.f Val
+fun delete_block (BB : llbasicblock) : unit = F_llvm_delete_block.f BB
+fun remove_block (BB : llbasicblock) : unit = F_llvm_remove_block.f BB
+fun move_block_before (Pos : llbasicblock) (BB : llbasicblock) : unit = F_llvm_move_block_before.f (Pos, BB)
+fun move_block_after (Pos : llbasicblock) (BB : llbasicblock) : unit = F_llvm_move_block_after.f (Pos, BB)
+fun append_block (C : llcontext) (Name : string) (Fn : llvalue) : llbasicblock =
+  let
+      val Name' = ZString.dupML Name
+  in
+      F_llvm_append_block.f (C, Name', Fn)
+      before
+      C.free Name'
+  end
+fun insert_block (C : llcontext) (Name : string) (BB : llbasicblock) : llbasicblock =
+  let
+      val Name' = ZString.dupML Name
+  in
+      F_llvm_insert_block.f (C, Name', BB)
+      before
+      C.free Name'
+  end
+fun block_begin (Fn : llvalue) : (llvalue, llbasicblock) llpos =
+  let
+      val Tag = C.new C.T.sint
+      val Res = F_llvm_block_begin.f (Fn, C.Ptr.|&| Tag)
+  in
+      (case C.Get.sint Tag of
+           0 => At_end Res
+         | 1 => Before Res
+         | _ => raise (Fail "block_begin"))
+      before
+      C.free (C.Ptr.|&| Tag)
+  end
+fun block_succ (BB : llbasicblock) : (llvalue, llbasicblock) llpos =
+  let
+      val Tag = C.new C.T.sint
+      val Res = F_llvm_block_succ.f (BB, C.Ptr.|&| Tag)
+  in
+      (case C.Get.sint Tag of
+           0 => At_end Res
+         | 1 => Before Res
+         | _ => raise (Fail "block_succ"))
+      before
+      C.free (C.Ptr.|&| Tag)
+  end
+fun block_end (Fn : llvalue) : (llvalue, llbasicblock) llrev_pos =
+  let
+      val Tag = C.new C.T.sint
+      val Res = F_llvm_block_end.f (Fn, C.Ptr.|&| Tag)
+  in
+      (case C.Get.sint Tag of
+           0 => At_start Res
+         | 1 => After Res
+         | _ => raise (Fail "block_end"))
+      before
+      C.free (C.Ptr.|&| Tag)
+  end
+fun block_pred (BB : llbasicblock) : (llvalue, llbasicblock) llrev_pos =
+  let
+      val Tag = C.new C.T.sint
+      val Res = F_llvm_block_pred.f (BB, C.Ptr.|&| Tag)
+  in
+      (case C.Get.sint Tag of
+           0 => At_start Res
+         | 1 => After Res
+         | _ => raise (Fail "block_pred"))
+      before
+      C.free (C.Ptr.|&| Tag)
+  end
+fun block_terminator (BB : llbasicblock) : llvalue option =
+  let
+      val Res = F_llvm_block_terminator.f BB
+  in
+      if C.Ptr.isNull' Res then NONE
+      else SOME Res
+  end
+
+fun iter_block_range f i e =
+  if i = e then () else
+  case i of
+      At_end _ => raise (Fail "Invalid block range.")
+    | Before bb => (f bb; iter_block_range f (block_succ bb) e)
+
+fun iter_blocks f func = iter_block_range f (block_begin func) (At_end func)
+
+fun fold_left_block_range f init i e =
+  if i = e then init else
+  case i of
+      At_end _ => (raise (Fail "Invalid block range."))
+    | Before bb => fold_left_block_range f (f init bb) (block_succ bb) e
+
+fun fold_left_blocks f init func = fold_left_block_range f init (block_begin func) (At_end func)
+
+fun rev_iter_block_range f i e =
+  if i = e then () else
+  case i of
+      At_start _ => raise (Fail "Invalid block range.")
+    | After bb => (f bb; rev_iter_function_range f (block_pred bb) e)
+
+fun rev_iter_blocks f func = rev_iter_block_range f (block_end func) (At_start func)
+
+fun fold_right_block_range f init i e =
+  if i = e then init else
+  case i of
+      At_start _ => raise (Fail "Invalid block range.")
+    | After bb => fold_right_block_range f (f bb init) (block_pred bb) e
+
+fun fold_right_blocks f func init = fold_right_block_range f init (block_end func) (At_start func)
 
 (*--... Operations on instructions .........................................--*)
+fun instr_parent (Inst : llvalue) : llbasicblock = F_llvm_instr_parent.f Inst
+fun instr_begin (BB : llbasicblock) : (llbasicblock, llvalue) llpos =
+  let
+      val Tag = C.new C.T.sint
+      val Res = F_llvm_instr_begin.f (BB, C.Ptr.|&| Tag)
+  in
+      (case C.Get.sint Tag of
+           0 => At_end Res
+         | 1 => Before Res
+         | _ => raise (Fail "instr_begin"))
+      before
+      C.free (C.Ptr.|&| Tag)
+  end
+fun instr_succ (Inst : llvalue) : (llbasicblock, llvalue) llpos =
+  let
+      val Tag = C.new C.T.sint
+      val Res = F_llvm_instr_succ.f (Inst, C.Ptr.|&| Tag)
+  in
+      (case C.Get.sint Tag of
+           0 => At_end Res
+         | 1 => Before Res
+         | _ => raise (Fail "instr_succ"))
+      before
+      C.free (C.Ptr.|&| Tag)
+  end
+fun instr_end (BB : llbasicblock) : (llbasicblock, llvalue) llrev_pos =
+  let
+      val Tag = C.new C.T.sint
+      val Res = F_llvm_instr_end.f (BB, C.Ptr.|&| Tag)
+  in
+      (case C.Get.sint Tag of
+           0 => At_start Res
+         | 1 => After Res
+         | _ => raise (Fail "instr_end"))
+      before
+      C.free (C.Ptr.|&| Tag)
+  end
+fun instr_pred (Inst : llvalue) : (llbasicblock, llvalue) llrev_pos =
+  let
+      val Tag = C.new C.T.sint
+      val Res = F_llvm_instr_pred.f (Inst, C.Ptr.|&| Tag)
+  in
+      (case C.Get.sint Tag of
+           0 => At_start Res
+         | 1 => After Res
+         | _ => raise (Fail "instr_pred"))
+      before
+      C.free (C.Ptr.|&| Tag)
+  end
+fun instr_opcode (Inst : llvalue) : Opcode.t = Opcode.fromInt $ Int32.toInt $ F_llvm_instr_opcode.f Inst
+fun icmp_predicate (Inst : llvalue) : Icmp.t option =
+  let
+      val Res = F_llvm_icmp_predicate.f Inst
+  in
+      if C.Ptr.isNull Res then NONE
+      else
+          SOME (Icmp.fromInt $ Int32.toInt $ C.Get.sint $ C.Ptr.|*| Res)
+          before
+          C.free Res
+  end
+fun fcmp_predicate (Inst : llvalue) : Fcmp.t option =
+  let
+      val Res = F_llvm_fcmp_predicate.f Inst
+  in
+      if C.Ptr.isNull Res then NONE
+      else
+          SOME (Fcmp.fromInt $ Int32.toInt $ C.Get.sint $ C.Ptr.|*| Res)
+          before
+          C.free Res
+  end
+fun instr_clone (Inst : llvalue) : llvalue = F_llvm_instr_clone.f Inst
+
+fun iter_instr_range f i e =
+  if i = e then () else
+  case i of
+      At_end _ => raise (Fail "Invalid instruction range.")
+    | Before i => (f i; iter_instr_range f (instr_succ i) e)
+
+fun iter_instrs f bb = iter_instr_range f (instr_begin bb) (At_end bb)
+
+fun fold_left_instr_range f init i e =
+  if i = e then init else
+  case i of
+      At_end _ => (raise (Fail "Invalid instruction range."))
+    | Before i => fold_left_instr_range f (f init i) (instr_succ i) e
+
+fun fold_left_instrs f init bb = fold_left_instr_range f init (instr_begin bb) (At_end bb)
+
+fun rev_iter_instr_range f i e =
+  if i = e then () else
+  case i of
+      At_start _ => raise (Fail "Invalid instruction range.")
+    | After i => (f i; rev_iter_function_range f (instr_pred i) e)
+
+fun rev_iter_instrs f bb = rev_iter_instr_range f (instr_end bb) (At_start bb)
+
+fun fold_right_instr_range f init i e =
+  if i = e then init else
+  case i of
+      At_start _ => raise (Fail "Invalid instruction range.")
+    | After i => fold_right_instr_range f (f i init) (instr_pred i) e
+
+fun fold_right_instrs f bb init = fold_right_instr_range f init (instr_end bb) (At_start bb)
 
 (*--... Operations on call sites ...........................................--*)
 
