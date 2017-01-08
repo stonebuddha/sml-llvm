@@ -306,6 +306,7 @@ void **llvm_incoming(void *, int *);
 void llvm_delete_instruction(void *);
 
 void *llvm_builder(void *);
+void llvm_position_builder(void *, int, void *);
 void *llvm_insertion_block(void *);
 void llvm_insert_into_builder(void *, const char *, void *);
 

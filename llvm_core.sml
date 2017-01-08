@@ -2061,8 +2061,46 @@ fun incoming (PhiNode : llvalue) : (llvalue * llbasicblock) list =
 fun delete_instruction (Inst : llvalue) : unit = F_llvm_delete_instruction.f Inst
 
 (*===-- Instruction builders ----------------------------------------------===*)
+fun builder (C : llcontext) : llbuilder = F_llvm_builder.f C
+fun position_builder (Pos : (llbasicblock, llvalue) llpos) (B : llbuilder) =
+  case Pos of
+      At_end BB => F_llvm_position_builder.f (BB, 0, B)
+    | Before Inst => F_llvm_position_builder.f (Inst, 1, B)
+fun insertion_block (B : llbuilder) : llbasicblock = F_llvm_insertion_block.f B
+fun insert_into_builder (Instr : llvalue) (Name : string) (B : llbuilder) : unit =
+  let
+      val Name' = ZString.dupML Name
+  in
+      F_llvm_insert_into_builder.f (Instr, Name', B)
+      before
+      C.free Name'
+  end
+
+fun builder_at context ip =
+  let
+      val b = builder context
+      val () = position_builder ip context
+  in
+      b
+  end
+
+fun builder_before context i = builder_at context (Before i)
+fun builder_at_end context bb = builder_at context (At_end bb)
+
+fun position_before i = position_builder (Before i)
+fun position_at_end bb = position_builder (At_end bb)
 
 (*--... Metadata ...........................................................--*)
+fun set_current_debug_location (B : llbuilder) (Val : llvalue) : unit = F_llvm_set_current_debug_location.f (B, Val)
+fun clear_current_debug_location (B : llbuilder) : unit = F_llvm_clear_current_debug_location.f B
+fun current_debug_location (B : llbuilder) : llvalue option =
+  let
+      val Res = F_llvm_current_debug_location.f B
+  in
+      if C.Ptr.isNull' Res then NONE
+      else SOME Res
+  end
+fun set_inst_debug_location (B : llbuilder) (Inst : llvalue) : unit = F_llvm_set_inst_debug_location.f (B, Inst)
 
 (*--... Terminators ........................................................--*)
 
