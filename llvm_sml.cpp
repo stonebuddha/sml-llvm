@@ -860,6 +860,180 @@ LLVMValueRef llvm_const_element(LLVMValueRef Val, int N) {
 
 /*--... Constant expressions ...............................................--*/
 
+/* lltype -> llvalue */
+extern "C"
+LLVMValueRef llvm_align_of(LLVMTypeRef Ty) {
+  return LLVMAlignOf(Ty);
+}
+
+/* lltype -> llvalue */
+extern "C"
+LLVMValueRef llvm_size_of(LLVMTypeRef Ty) {
+  return LLVMSizeOf(Ty);
+}
+
+/* llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_neg(LLVMValueRef Val) {
+  return LLVMConstNeg(Val);
+}
+
+/* llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_nsw_neg(LLVMValueRef Val) {
+  return LLVMConstNSWNeg(Val);
+}
+
+/* llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_nuw_neg(LLVMValueRef Val) {
+  return LLVMConstNUWNeg(Val);
+}
+
+/* llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_fneg(LLVMValueRef Val) {
+  return LLVMConstFNeg(Val);
+}
+
+/* llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_not(LLVMValueRef Val) {
+  return LLVMConstNot(Val);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_add(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstAdd(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_nsw_add(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstNSWAdd(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_nuw_add(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstNUWAdd(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_fadd(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstFAdd(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_sub(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstSub(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_nsw_sub(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstNSWSub(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_nuw_sub(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstNUWSub(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_fsub(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstFSub(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_mul(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstMul(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_nsw_mul(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstNSWMul(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_nuw_mul(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstNUWMul(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_fmul(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstFMul(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_udiv(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstUDiv(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_sdiv(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstSDiv(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_exact_sdiv(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstExactSDiv(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_fdiv(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstFDiv(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_urem(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstURem(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_srem(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstSRem(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_frem(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstFRem(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_and(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstAnd(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_or(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstOr(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_xor(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstXor(LHS, RHS);
+}
+
 /* Icmp.t * llvalue * llvalue -> llvaue */
 extern "C"
 LLVMValueRef llvm_const_icmp(int Pred, LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
@@ -872,8 +1046,473 @@ LLVMValueRef llvm_const_fcmp(int Pred, LLVMValueRef LHSConstant, LLVMValueRef RH
   return LLVMConstFCmp((LLVMRealPredicate) Pred, LHSConstant, RHSConstant);
 }
 
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_shl(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstShl(LHS, RHS);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_ashr(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstAShr(LHS, RHS);
+}
+
 /* llvalue * llvalue array -> llvalue */
 extern "C"
 LLVMValueRef llvm_const_gep(LLVMValueRef ConstantVal, LLVMValueRef *Indices, int IndexCount) {
   return LLVMConstGEP(ConstantVal, Indices, IndexCount);
 }
+
+/* llvalue * llvalue array -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_in_bounds_gep(LLVMValueRef ConstantVal, LLVMValueRef *Indices, int IndexCount) {
+  return LLVMConstInBoundsGEP(ConstantVal, Indices, IndexCount);
+}
+
+/* llvalue * lltype -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_trunc(LLVMValueRef Val, LLVMTypeRef Ty) {
+  return LLVMConstTrunc(Val, Ty);
+}
+
+/* llvalue * lltype -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_sext(LLVMValueRef Val, LLVMTypeRef Ty) {
+  return LLVMConstSExt(Val, Ty);
+}
+
+/* llvalue * lltype -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_zext(LLVMValueRef Val, LLVMTypeRef Ty) {
+  return LLVMConstZExt(Val, Ty);
+}
+
+/* llvalue * lltype -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_fptrunc(LLVMValueRef Val, LLVMTypeRef Ty) {
+  return LLVMConstFPTrunc(Val, Ty);
+}
+
+/* llvalue * lltype -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_fpext(LLVMValueRef Val, LLVMTypeRef Ty) {
+  return LLVMConstFPExt(Val, Ty);
+}
+
+/* llvalue * lltype -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_uitofp(LLVMValueRef Val, LLVMTypeRef Ty) {
+  return LLVMConstUIToFP(Val, Ty);
+}
+
+/* llvalue * lltype -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_sitofp(LLVMValueRef Val, LLVMTypeRef Ty) {
+  return LLVMConstSIToFP(Val, Ty);
+}
+
+/* llvalue * lltype -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_fptoui(LLVMValueRef Val, LLVMTypeRef Ty) {
+  return LLVMConstFPToUI(Val, Ty);
+}
+
+/* llvalue * lltype -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_fptosi(LLVMValueRef Val, LLVMTypeRef Ty) {
+  return LLVMConstFPToSI(Val, Ty);
+}
+
+/* llvalue * lltype -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_ptrtoint(LLVMValueRef Val, LLVMTypeRef Ty) {
+  return LLVMConstPtrToInt(Val, Ty);
+}
+
+/* llvalue * lltype -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_inttoptr(LLVMValueRef Val, LLVMTypeRef Ty) {
+  return LLVMConstIntToPtr(Val, Ty);
+}
+
+/* llvalue * lltype -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_bitcast(LLVMValueRef Val, LLVMTypeRef Ty) {
+  return LLVMConstBitCast(Val, Ty);
+}
+
+/* llvalue * lltype -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_zext_or_bitcast(LLVMValueRef Val, LLVMTypeRef Ty) {
+  return LLVMConstZExtOrBitCast(Val, Ty);
+}
+
+/* llvalue * lltype -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_sext_or_bitcast(LLVMValueRef Val, LLVMTypeRef Ty) {
+  return LLVMConstSExtOrBitCast(Val, Ty);
+}
+
+/* llvalue * lltype -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_trunc_or_bitcast(LLVMValueRef Val, LLVMTypeRef Ty) {
+  return LLVMConstTruncOrBitCast(Val, Ty);
+}
+
+/* llvalue * lltype -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_pointercast(LLVMValueRef Val, LLVMTypeRef Ty) {
+  return LLVMConstPointerCast(Val, Ty);
+}
+
+/* llvalue * lltype -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_intcast(LLVMValueRef Val, LLVMTypeRef Ty, int IsSigned) {
+  return LLVMConstIntCast(Val, Ty, IsSigned);
+}
+
+/* llvalue * lltype -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_fpcast(LLVMValueRef Val, LLVMTypeRef Ty) {
+  return LLVMConstFPCast(Val, Ty);
+}
+
+/* llvalue * llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_select(LLVMValueRef If, LLVMValueRef Then, LLVMValueRef Else) {
+  return LLVMConstSelect(If, Then, Else);
+}
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_extractelement(LLVMValueRef Val1, LLVMValueRef Val2) {
+  return LLVMConstExtractElement(Val1, Val2);
+}
+
+/* llvalue * llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_insertelement(LLVMValueRef Val1, LLVMValueRef Val2, LLVMValueRef Val3) {
+  return LLVMConstInsertElement(Val1, Val2, Val3);
+}
+
+/* llvalue * llvalue * llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_shufflevector(LLVMValueRef Val1, LLVMValueRef Val2, LLVMValueRef Val3) {
+  return LLVMConstShuffleVector(Val1, Val2, Val3);
+}
+
+/* llvalue * int array -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_extractvalue(LLVMValueRef Aggregate, int *Indices, int IndexCount) {
+  unsigned *Idxs = (unsigned *) malloc(sizeof(unsigned) * IndexCount);
+  int I;
+  LLVMValueRef Res;
+
+  for (I = 0; I < IndexCount; I += 1) {
+    Idxs[I] = Indices[I];
+  }
+
+  Res = LLVMConstExtractValue(Aggregate, Idxs, IndexCount);
+  free(Idxs);
+  return Res;
+}
+
+/* llvalue * llvalue * int array -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_insertvalue(LLVMValueRef Aggregate, LLVMValueRef Val, int *Indices, int IndexCount) {
+  unsigned *Idxs = (unsigned *) malloc(sizeof(unsigned) * IndexCount);
+  int I;
+  LLVMValueRef Res;
+
+  for (I = 0; I < IndexCount; I += 1) {
+    Idxs[I] = Indices[I];
+  }
+
+  Res = LLVMConstInsertValue(Aggregate, Val, Idxs, IndexCount);
+  free(Idxs);
+  return Res;
+}
+
+/* lltype * string * string * bool * bool -> llvalue */
+extern "C"
+LLVMValueRef llvm_const_inline_asm(LLVMTypeRef Ty, const char *Asm, const char *Constraints, int HasSideEffect, int IsAlignStack) {
+  return LLVMConstInlineAsm(Ty, Asm, Constraints, HasSideEffect, IsAlignStack);
+}
+
+/* llvalue * llbasicblock -> llvalue */
+extern "C"
+LLVMValueRef llvm_block_address(LLVMValueRef Val, LLVMBasicBlockRef BB) {
+  return LLVMBlockAddress(Val, BB);
+}
+
+/*--... Operations on global variables, functions, and aliases (globals) ...--*/
+
+/* llvalue -> llmodule */
+extern "C"
+LLVMModuleRef llvm_global_parent(LLVMValueRef Global) {
+  return LLVMGetGlobalParent(Global);
+}
+
+/* llvalue -> bool */
+extern "C"
+int llvm_is_declaration(LLVMValueRef Global) {
+  return LLVMIsDeclaration(Global);
+}
+
+/* llvalue -> Linkage.t */
+extern "C"
+int llvm_linkage(LLVMValueRef Global) {
+  return LLVMGetLinkage(Global);
+}
+
+/* Linkage.t * llvalue -> unit */
+extern "C"
+void llvm_set_linkage(int Linkage, LLVMValueRef Global) {
+  LLVMSetLinkage(Global, (LLVMLinkage) Linkage);
+}
+
+/* llvalue -> bool */
+extern "C"
+int llvm_unnamed_addr(LLVMValueRef Global) {
+  return LLVMHasUnnamedAddr(Global);
+}
+
+/* bool * llvalue -> unit */
+extern "C"
+void llvm_set_unnamed_addr(int UseUnnamedAddr, LLVMValueRef Global) {
+  LLVMSetUnnamedAddr(Global, UseUnnamedAddr);
+}
+
+/* llvalue -> string */
+extern "C"
+const char *llvm_section(LLVMValueRef Global) {
+  return LLVMGetSection(Global);
+}
+
+/* string * llvalue -> unit */
+extern "C"
+void llvm_set_section(const char *Section, LLVMValueRef Global) {
+  LLVMSetSection(Global, Section);
+}
+
+/* llvalue -> Visibility.t */
+extern "C"
+int llvm_visibility(LLVMValueRef Global) {
+  return LLVMGetVisibility(Global);
+}
+
+/* Visibility.t * llvalue -> unit */
+extern "C"
+void llvm_set_visibility(int Viz, LLVMValueRef Global) {
+  LLVMSetVisibility(Global, (LLVMVisibility) Viz);
+}
+
+/* llvalue -> DLLStorageClass.t */
+extern "C"
+int llvm_dll_storage_class(LLVMValueRef Global) {
+  return LLVMGetDLLStorageClass(Global);
+}
+
+/* DLLStorageClass.t * llvalue -> unit */
+extern "C"
+void llvm_set_dll_storage_class(int Viz, LLVMValueRef Global) {
+  LLVMSetDLLStorageClass(Global, (LLVMDLLStorageClass) Viz);
+}
+
+/* llvalue -> int */
+extern "C"
+int llvm_alignment(LLVMValueRef Global) {
+  return LLVMGetAlignment(Global);
+}
+
+/* int * llvalue -> unit */
+extern "C"
+void llvm_set_alignment(int Bytes, LLVMValueRef Global) {
+  LLVMSetAlignment(Global, Bytes);
+}
+
+/* llvalue -> bool */
+extern "C"
+int llvm_is_global_constant(LLVMValueRef Val) {
+  return LLVMIsGlobalConstant(Val);
+}
+
+/* bool * llvalue -> unit */
+extern "C"
+void llvm_set_global_constant(int IsConstant, LLVMValueRef Val) {
+  LLVMSetGlobalConstant(Val, IsConstant);
+}
+
+/*--... Operations on global variables .....................................--*/
+
+/* lltype * string * llmodule -> llvalue */
+extern "C"
+LLVMValueRef llvm_declare_global(LLVMTypeRef Ty, const char *Name, LLVMModuleRef M) {
+  LLVMValueRef GlobalVar;
+  if ((GlobalVar = LLVMGetNamedGlobal(M, Name))) {
+    if (LLVMGetElementType(LLVMTypeOf(GlobalVar)) != Ty) {
+      return LLVMConstBitCast(GlobalVar, LLVMPointerType(Ty, 0));
+    } else {
+      return GlobalVar;
+    }
+  } else {
+    return LLVMAddGlobal(M, Ty, Name);
+  }
+}
+
+/* lltype * string * int * llmodule -> llvalue */
+extern "C"
+LLVMValueRef llvm_declare_qualified_global(LLVMTypeRef Ty, const char *Name, int AddrSpace, LLVMModuleRef M) {
+  LLVMValueRef GlobalVar;
+  if ((GlobalVar = LLVMGetNamedGlobal(M, Name))) {
+    if (LLVMGetElementType(LLVMTypeOf(GlobalVar)) != Ty) {
+      return LLVMConstBitCast(GlobalVar, LLVMPointerType(Ty, AddrSpace));
+    } else {
+      return GlobalVar;
+    }
+  } else {
+    return LLVMAddGlobalInAddressSpace(M, Ty, Name, AddrSpace);
+  }
+}
+
+/* string * llvalue * llmodule -> llvalue */
+extern "C"
+LLVMValueRef llvm_define_global(const char *Name, LLVMValueRef Initializer, LLVMModuleRef M) {
+  LLVMValueRef GlobalVar = LLVMAddGlobal(M, LLVMTypeOf(Initializer), Name);
+  LLVMSetInitializer(GlobalVar, Initializer);
+  return GlobalVar;
+}
+
+/* string * llvalue * int * llmodule -> llvalue */
+extern "C"
+LLVMValueRef llvm_define_qualified_global(const char *Name, LLVMValueRef Initializer, int AddrSpace, LLVMModuleRef M) {
+  LLVMValueRef GlobalVar = LLVMAddGlobalInAddressSpace(M, LLVMTypeOf(Initializer), Name, AddrSpace);
+  LLVMSetInitializer(GlobalVar, Initializer);
+  return GlobalVar;
+}
+
+/* string * llmodule -> llvalue option */
+extern "C"
+LLVMValueRef llvm_lookup_global(const char *Name, LLVMModuleRef M) {
+  LLVMValueRef GlobalVar;
+  if ((GlobalVar = LLVMGetNamedGlobal(M, Name))) {
+    return GlobalVar;
+  } else {
+    return NULL;
+  }
+}
+
+/* llvalue -> unit */
+extern "C"
+void llvm_delete_global(LLVMValueRef GlobalVar) {
+  LLVMDeleteGlobal(GlobalVar);
+}
+
+/* llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_global_initializer(LLVMValueRef GlobalVar) {
+  return LLVMGetInitializer(GlobalVar);
+}
+
+/* llvalue * llvalue -> unit */
+extern "C"
+void llvm_set_initializer(LLVMValueRef ConstantVal, LLVMValueRef GlobalVar) {
+  LLVMSetInitializer(GlobalVar, ConstantVal);
+}
+
+/* llvalue -> unit */
+extern "C"
+void llvm_remove_initializer(LLVMValueRef GlobalVar) {
+  LLVMSetInitializer(GlobalVar, NULL);
+}
+
+/* llvalue -> bool */
+extern "C"
+int llvm_is_thread_local(LLVMValueRef GlobalVar) {
+  return LLVMIsThreadLocal(GlobalVar);
+}
+
+/* bool * llvalue -> unit */
+extern "C"
+void llvm_set_thread_local(int IsThreadLocal, LLVMValueRef GlobalVar) {
+  LLVMSetThreadLocal(GlobalVar, IsThreadLocal);
+}
+
+/* llvalue -> ThreadLocalMode.t */
+extern "C"
+int llvm_thread_local_mode(LLVMValueRef GlobalVar) {
+  return LLVMGetThreadLocalMode(GlobalVar);
+}
+
+/* ThreadLocalMode.t * llvalue -> unit */
+extern "C"
+void llvm_set_thread_local_mode(int ThreadLocalMode, LLVMValueRef GlobalVar) {
+  LLVMSetThreadLocalMode(GlobalVar, (LLVMThreadLocalMode) ThreadLocalMode);
+}
+
+/* llvalue -> bool */
+extern "C"
+int llvm_is_externally_initialized(LLVMValueRef GlobalVar) {
+  return LLVMIsExternallyInitialized(GlobalVar);
+}
+
+/* bool * llvalue -> unit */
+extern "C"
+void llvm_set_externally_initialized(int IsExternallyInitialized, LLVMValueRef GlobalVar) {
+  LLVMSetExternallyInitialized(GlobalVar, IsExternallyInitialized);
+}
+
+/* llmodule -> (llmodule, llvalue) llpos */
+extern "C"
+void *llvm_global_begin(LLVMModuleRef M, int *Tag) {
+  LLVMValueRef First = LLVMGetFirstGlobal(M);
+  if (First) {
+    (*Tag) = 1;
+    return First;
+  } else {
+    (*Tag) = 0;
+    return M;
+  }
+}
+
+/* llvalue -> (llmodule, llvalue) llpos */
+extern "C"
+void *llvm_global_succ(LLVMValueRef Val, int *Tag) {
+  LLVMValueRef Next = LLVMGetNextGlobal(Val);
+  if (Next) {
+    (*Tag) = 1;
+    return Next;
+  } else {
+    (*Tag) = 0;
+    return LLVMGetGlobalParent(Val);
+  }
+}
+
+/* llmodule -> (llmodule, llvalue) llrev_pos */
+extern "C"
+void *llvm_global_end(LLVMModuleRef M, int *Tag) {
+  LLVMValueRef Last = LLVMGetLastGlobal(M);
+  if (Last) {
+    (*Tag) = 1;
+    return Last;
+  } else {
+    (*Tag) = 0;
+    return M;
+  }
+}
+
+/* llvalue -> (llmodule, llvalue) llrev_pos */
+extern "C"
+void *llvm_global_pred(LLVMValueRef Val, int *Tag) {
+  LLVMValueRef Prev = LLVMGetPreviousGlobal(Val);
+  if (Prev) {
+    (*Tag) = 1;
+    return Prev;
+  } else {
+    (*Tag) = 0;
+    return LLVMGetGlobalParent(Val);
+  }
+}
+
+/*--... Operations on aliases ..............................................--*/
