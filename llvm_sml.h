@@ -302,6 +302,7 @@ void llvm_set_condition(void *, void *);
 int llvm_is_conditional(void *);
 
 void llvm_add_incoming(void *, void *, void *);
+void **llvm_incoming(void *, int *);
 void llvm_delete_instruction(void *);
 
 void *llvm_builder(void *);

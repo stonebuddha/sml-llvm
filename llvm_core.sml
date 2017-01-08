@@ -1946,16 +1946,119 @@ fun fold_right_instr_range f init i e =
 fun fold_right_instrs f bb init = fold_right_instr_range f init (instr_end bb) (At_start bb)
 
 (*--... Operations on call sites ...........................................--*)
+fun instruction_call_conv (Inst : llvalue) : int = Int32.toInt $ F_llvm_instruction_call_conv.f Inst
+fun set_instruction_call_conv (CC : int) (Inst : llvalue) : unit = F_llvm_set_instruction_call_conv.f (Int32.fromInt CC, Inst)
+fun llvm_add_instruction_param_attr (Inst : llvalue) (Index : int) (PA : Int32.int) : unit = F_llvm_add_instruction_param_attr.f (Inst, Int32.fromInt Index, PA)
+fun llvm_remove_instrution_param_attr (Inst : llvalue) (Index : int) (PA : Int32.int) : unit = F_llvm_remove_instruction_param_attr.f (Inst, Int32.fromInt Index, PA)
+
+fun add_instructin_param_attr (Inst : llvalue) (Index : int) (PA : Attribute.t) : unit = llvm_add_instruction_param_attr Inst Index (pack_attr PA)
+fun remove_instruction_param_attr (Inst : llvalue) (Index : int) (PA : Attribute.t) : unit = llvm_remove_instrution_param_attr Inst Index (pack_attr PA)
 
 (*--... Operations on call instructions (only) .............................--*)
+fun is_tail_call (CallInst : llvalue) : bool =
+  case F_llvm_is_tail_call.f CallInst of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "is_tail_call")
+fun set_tail_call (IsTailCall : bool) (CallInst : llvalue) : unit = F_llvm_set_tail_call.f (if IsTailCall then 1 else 0, CallInst)
 
 (*--... Operations on load/store instructions (only) .......................--*)
+fun is_volatile (MemoryInst : llvalue) : bool =
+  case F_llvm_is_volatile.f MemoryInst of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "is_volatile")
+fun set_volatile (IsVolatile : bool) (MemoryInst : llvalue) : unit = F_llvm_set_volatile.f (if IsVolatile then 1 else 0, MemoryInst)
 
 (*--... Operations on terminators ..........................................--*)
+fun is_terminator llv =
+  case classify_value llv of
+      ValueKind.Instruction Opcode.Br => true
+    | ValueKind.Instruction Opcode.IndirectBr => true
+    | ValueKind.Instruction Opcode.Invoke => true
+    | ValueKind.Instruction Opcode.Resume => true
+    | ValueKind.Instruction Opcode.Ret => true
+    | ValueKind.Instruction Opcode.Switch => true
+    | ValueKind.Instruction Opcode.Unreachable => true
+    | _ => false
+
+fun successor (Val : llvalue) (I : int) : llbasicblock = F_llvm_successor.f (Val, Int32.fromInt I)
+fun set_successor (Val : llvalue) (I : int) (BB : llbasicblock) : unit = F_llvm_set_successor.f (Val, Int32.fromInt I, BB)
+fun num_successors (Val : llvalue) : int = Int32.toInt $ F_llvm_num_successors.f Val
+
+fun successors llv =
+  if not (is_terminator llv) then
+      raise (Fail "successors can only be used on terminators")
+  else
+      Array.tabulate (num_successors llv, successor llv)
+
+fun iter_successors f llv =
+  if not (is_terminator llv) then
+      raise (Fail "iter_successors can only be used on terminators")
+  else
+      let
+          val num = num_successors llv
+          fun loop idx =
+            if idx = num then () else
+            (f (successor llv idx); loop (idx + 1))
+      in
+          loop 0
+      end
+
+fun fold_successors f llv z =
+  if not (is_terminator llv) then
+      raise (Fail "fold_successors can only be used on terminators")
+  else
+      let
+          val num = num_successors llv
+          fun loop idx acc =
+            if idx = num then acc else
+            loop (idx + 1) (f (successor llv idx) acc)
+      in
+          loop 0 z
+      end
 
 (*--... Operations on branches .............................................--*)
+fun condition (Val : llvalue) : llvalue = F_llvm_condition.f Val
+fun set_condition (B : llvalue) (C : llvalue) : unit = F_llvm_set_condition.f (B, C)
+fun is_conditional (Val : llvalue) : bool =
+  case F_llvm_is_conditional.f Val of
+      0 => false
+    | 1 => true
+    | _ => raise (Fail "is_conditional")
+
+structure Branch =
+struct
+datatype t =
+         Conditional of llvalue * llbasicblock * llbasicblock
+         | Unconditional of llbasicblock
+end
+
+fun get_branch llv =
+  if classify_value llv <> ValueKind.Instruction Opcode.Br then
+      NONE
+  else
+      if is_conditional llv then
+          SOME (Branch.Conditional (condition llv, successor llv 0, successor llv 1))
+      else
+          SOME (Branch.Unconditional (successor llv 0))
 
 (*--... Operations on phi nodes ............................................--*)
+fun add_incoming (Val : llvalue, BB : llbasicblock) (PhiNode : llvalue) : unit = F_llvm_add_incoming.f (Val, BB, PhiNode)
+fun incoming (PhiNode : llvalue) : (llvalue * llbasicblock) list =
+  let
+      val Len = C.new C.T.sint
+      val Buf = F_llvm_incoming.f (PhiNode, C.Ptr.|&| Len)
+      val Num = Int32.toInt $ C.Get.sint Len
+      val Arr = toVPtrArr Buf Len before (C.free Buf; C.free (C.Ptr.|&| Len))
+      fun loop Idx Acc =
+        if Idx = 0 then Acc else
+        loop (Idx - 2) ((Array.sub (Arr, Idx - 2), Array.sub (Arr, Idx - 1)) :: Acc)
+  in
+      loop Num []
+  end
+
+fun delete_instruction (Inst : llvalue) : unit = F_llvm_delete_instruction.f Inst
 
 (*===-- Instruction builders ----------------------------------------------===*)
 
