@@ -1057,6 +1057,13 @@ LLVMValueRef llvm_const_shl(LLVMValueRef LHS, LLVMValueRef RHS) {
 
 /* llvalue * llvalue -> llvalue */
 extern "C"
+LLVMValueRef llvm_const_lshr(LLVMValueRef LHS, LLVMValueRef RHS) {
+  return LLVMConstLShr(LHS, RHS);
+}
+
+
+/* llvalue * llvalue -> llvalue */
+extern "C"
 LLVMValueRef llvm_const_ashr(LLVMValueRef LHS, LLVMValueRef RHS) {
   return LLVMConstAShr(LHS, RHS);
 }
@@ -2338,49 +2345,49 @@ LLVMValueRef llvm_build_unreachable(LLVMBuilderRef B) {
 
 /*--... Arithmetic .........................................................--*/
 
-// #define DEFINE_BINOP(mlname, cname) \
-//   /* llvalue * llvalue * string * llbuilder -> llvalue */ \
-//   extern "C" \
-//   LLVMValueRef llvm_build_##mlname(LLVMValueRef LHS, LLVMValueRef RHS, const char *Name, LLVMBuilderRef B) { \
-//     return LLVMBuild##cname(B, LHS, RHS, Name); \
-//   }
-// #define DEFINE_UNOP(mlname, cname) \
-//   /* llvalue * string * llbuilder -> llvalue */ \
-//   extern "C" \\
-//   LLVMValueRef llvm_build_##mlname(LLVMValueRef X, const char *Name, LLVMBuilderRef B) { \
-//     return LLVMBuild##cname(B, X, Name); \
-//   }
+#define DEFINE_BINOP(mlname, cname) \
+  /* llvalue * llvalue * string * llbuilder -> llvalue */ \
+  extern "C"                                                            \
+  LLVMValueRef llvm_build_##mlname(LLVMValueRef LHS, LLVMValueRef RHS, const char *Name, LLVMBuilderRef B) { \
+    return LLVMBuild##cname(B, LHS, RHS, Name);                         \
+  }
+#define DEFINE_UNOP(mlname, cname)               \
+  /* llvalue * string * llbuilder -> llvalue */  \
+  extern "C"                                                            \
+  LLVMValueRef llvm_build_##mlname(LLVMValueRef X, const char *Name, LLVMBuilderRef B) { \
+    return LLVMBuild##cname(B, X, Name);                                \
+  }
 
-// DEFINE_BINOP(add, Add)
-// DEFINE_BINOP(nsw_add, NSWAdd)
-// DEFINE_BINOP(nuw_add, NUWAdd)
-// DEFINE_BINOP(fadd, FAdd)
-// DEFINE_BINOP(sub, Sub)
-// DEFINE_BINOP(nsw_sub, NSWSub)
-// DEFINE_BINOP(nuw_sub, NUWSub)
-// DEFINE_BINOP(fsub, FSub)
-// DEFINE_BINOP(mul, Mul)
-// DEFINE_BINOP(nsw_mul, NSWMul)
-// DEFINE_BINOP(nuw_mul, NUWMul)
-// DEFINE_BINOP(fmul, FMul)
-// DEFINE_BINOP(udiv, UDiv)
-// DEFINE_BINOP(sdiv, SDiv)
-// DEFINE_BINOP(exact_sdiv, ExactSDiv)
-// DEFINE_BINOP(fdiv, FDiv)
-// DEFINE_BINOP(urem, URem)
-// DEFINE_BINOP(srem, SRem)
-// DEFINE_BINOP(frem, FRem)
-// DEFINE_BINOP(shl, Shl)
-// DEFINE_BINOP(lshr, LShr)
-// DEFINE_BINOP(ashr, AShr)
-// DEFINE_BINOP(and, And)
-// DEFINE_BINOP(or, Or)
-// DEFINE_BINOP(xor, Xor)
-// DEFINE_UNOP(neg, Neg)
-// DEFINE_UNOP(nsw_neg, NSWNeg)
-// DEFINE_UNOP(nuw_neg, NUWNeg)
-// DEFINE_UNOP(fneg, FNeg)
-// DEFINE_UNOP(not, Not)
+DEFINE_BINOP(add, Add)
+DEFINE_BINOP(nsw_add, NSWAdd)
+DEFINE_BINOP(nuw_add, NUWAdd)
+DEFINE_BINOP(fadd, FAdd)
+DEFINE_BINOP(sub, Sub)
+DEFINE_BINOP(nsw_sub, NSWSub)
+DEFINE_BINOP(nuw_sub, NUWSub)
+DEFINE_BINOP(fsub, FSub)
+DEFINE_BINOP(mul, Mul)
+DEFINE_BINOP(nsw_mul, NSWMul)
+DEFINE_BINOP(nuw_mul, NUWMul)
+DEFINE_BINOP(fmul, FMul)
+DEFINE_BINOP(udiv, UDiv)
+DEFINE_BINOP(sdiv, SDiv)
+DEFINE_BINOP(exact_sdiv, ExactSDiv)
+DEFINE_BINOP(fdiv, FDiv)
+DEFINE_BINOP(urem, URem)
+DEFINE_BINOP(srem, SRem)
+DEFINE_BINOP(frem, FRem)
+DEFINE_BINOP(shl, Shl)
+DEFINE_BINOP(lshr, LShr)
+DEFINE_BINOP(ashr, AShr)
+DEFINE_BINOP(and, And)
+DEFINE_BINOP(or, Or)
+DEFINE_BINOP(xor, Xor)
+DEFINE_UNOP(neg, Neg)
+DEFINE_UNOP(nsw_neg, NSWNeg)
+DEFINE_UNOP(nuw_neg, NUWNeg)
+DEFINE_UNOP(fneg, FNeg)
+DEFINE_UNOP(not, Not)
 
 /*--... Memory .............................................................--*/
 
@@ -2449,31 +2456,31 @@ LLVMValueRef llvm_build_global_stringptr(const char *Str, const char *Name, LLVM
 
 /*--... Casts ..............................................................--*/
 
-// #define DEFINE_CAST(mlname, cname) \
-//   /* llvalue * lltype * string * llbuilder -> llvalue */ \
-//   extern "C" \
-//   LLVMValueRef llvm_build_##mlname(LLVMValueRef X, LLVMTypeRef Ty, const char *Name, LLVMBuilderRef B) { \
-//     return LLVMBuild##cname(B, X, Ty, Name); \
-//   }
+#define DEFINE_CAST(mlname, cname) \
+  /* llvalue * lltype * string * llbuilder -> llvalue */  \
+  extern "C" \
+  LLVMValueRef llvm_build_##mlname(LLVMValueRef X, LLVMTypeRef Ty, const char *Name, LLVMBuilderRef B) { \
+    return LLVMBuild##cname(B, X, Ty, Name);                            \
+  }
 
-// DEFINE_CAST(trunc, Trunc)
-// DEFINE_CAST(zext, ZExt)
-// DEFINE_CAST(sext, SExt)
-// DEFINE_CAST(fptoui, FPToUI)
-// DEFINE_CAST(fptosi, FPToSI)
-// DEFINE_CAST(uitofp, UIToFP)
-// DEFINE_CAST(sitofp, SIToFP)
-// DEFINE_CAST(fptrunc, FPTrunc)
-// DEFINE_CAST(fpext, FPExt)
-// DEFINE_CAST(ptrtoint, PtrToInt)
-// DEFINE_CAST(inttoptr, IntToPtr)
-// DEFINE_CAST(bitcast, BitCast)
-// DEFINE_CAST(zext_or_bitcast, ZExtOrBitCast)
-// DEFINE_CAST(sext_or_bitcast, SExtOrBitCast)
-// DEFINE_CAST(trunc_or_bitcast, TruncOrBitCast)
-// DEFINE_CAST(pointercast, PointerCast)
-// DEFINE_CAST(intcast, IntCast)
-// DEFINE_CAST(fpcast, FPCast)
+DEFINE_CAST(trunc, Trunc)
+DEFINE_CAST(zext, ZExt)
+DEFINE_CAST(sext, SExt)
+DEFINE_CAST(fptoui, FPToUI)
+DEFINE_CAST(fptosi, FPToSI)
+DEFINE_CAST(uitofp, UIToFP)
+DEFINE_CAST(sitofp, SIToFP)
+DEFINE_CAST(fptrunc, FPTrunc)
+DEFINE_CAST(fpext, FPExt)
+DEFINE_CAST(ptrtoint, PtrToInt)
+DEFINE_CAST(inttoptr, IntToPtr)
+DEFINE_CAST(bitcast, BitCast)
+DEFINE_CAST(zext_or_bitcast, ZExtOrBitCast)
+DEFINE_CAST(sext_or_bitcast, SExtOrBitCast)
+DEFINE_CAST(trunc_or_bitcast, TruncOrBitCast)
+DEFINE_CAST(pointercast, PointerCast)
+DEFINE_CAST(intcast, IntCast)
+DEFINE_CAST(fpcast, FPCast)
 
 /*--... Comparisons ........................................................--*/
 
@@ -2511,6 +2518,12 @@ LLVMValueRef llvm_build_phi(LLVMValueRef *Vals, LLVMBasicBlockRef *BBs, int Coun
 extern "C"
 LLVMValueRef llvm_build_empty_phi(LLVMTypeRef Ty, const char *Name, LLVMBuilderRef B) {
   return LLVMBuildPhi(B, Ty, Name);
+}
+
+/* llvalue * llvalue array * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_call(LLVMValueRef Fn, LLVMValueRef *Params, int ParamCount, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildCall(B, Fn, Params, ParamCount, Name);
 }
 
 /* llvalue * llvalue * llvalue * string * llbuilder -> llvalue */
