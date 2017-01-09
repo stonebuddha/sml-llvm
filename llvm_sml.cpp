@@ -96,6 +96,7 @@ void llvm_print_module(const char *Filename, LLVMModuleRef M) {
 
   if (LLVMPrintModuleToFile(M, Filename, &ErrorMessage)) {
     /* TODO: throw an exception */
+    assert(0);
   }
 }
 
@@ -1777,3 +1778,560 @@ extern "C"
 void llvm_set_param_alignment(LLVMValueRef Arg, int Align) {
   LLVMSetParamAlignment(Arg, Align);
 }
+
+/*--... Operations on basic blocks .........................................--*/
+
+/* llbasicblock -> llvalue */
+extern "C"
+LLVMValueRef llvm_value_of_block(LLVMBasicBlockRef BB) {
+  return LLVMBasicBlockAsValue(BB);
+}
+
+/* llvalue -> bool */
+extern "C"
+int llvm_value_is_block(LLVMValueRef Val) {
+  return LLVMValueIsBasicBlock(Val);
+}
+
+/* llvalue -> llbasicblock */
+extern "C"
+LLVMBasicBlockRef llvm_block_of_value(LLVMValueRef Val) {
+  return LLVMValueAsBasicBlock(Val);
+}
+
+/* llbasicblock -> llvalue */
+extern "C"
+LLVMValueRef llvm_block_parent(LLVMBasicBlockRef BB) {
+  return LLVMGetBasicBlockParent(BB);
+}
+
+/* llvalue -> llbasicblock array */
+extern "C"
+LLVMBasicBlockRef *llvm_basic_blocks(LLVMValueRef Fn, int *Len) {
+  LLVMBasicBlockRef *MLArray = (LLVMBasicBlockRef *) malloc(sizeof(LLVMBasicBlockRef) * LLVMCountBasicBlocks(Fn));
+  LLVMGetBasicBlocks(Fn, MLArray);
+  (*Len) = LLVMCountBasicBlocks(Fn);
+  return MLArray;
+}
+
+/* llvalue -> llbasicblock */
+extern "C"
+LLVMBasicBlockRef llvm_entry_block(LLVMValueRef Val) {
+  return LLVMGetEntryBasicBlock(Val);
+}
+
+/* llbasicblock -> unit */
+extern "C"
+void llvm_delete_block(LLVMBasicBlockRef BB) {
+  LLVMDeleteBasicBlock(BB);
+}
+
+/* llbasicblock -> unit */
+extern "C"
+void llvm_remove_block(LLVMBasicBlockRef BB) {
+  LLVMRemoveBasicBlockFromParent(BB);
+}
+
+/* llbasicblock * llbasicblock -> unit */
+extern "C"
+void llvm_move_block_before(LLVMBasicBlockRef Pos, LLVMBasicBlockRef BB) {
+  LLVMMoveBasicBlockBefore(BB, Pos);
+}
+
+/* llbasicblock * llbasicblock -> unit */
+extern "C"
+void llvm_move_block_after(LLVMBasicBlockRef Pos, LLVMBasicBlockRef BB) {
+  LLVMMoveBasicBlockAfter(BB, Pos);
+}
+
+/* llcontext * string * llvalue -> llbasicblock */
+extern "C"
+LLVMBasicBlockRef llvm_append_block(LLVMContextRef C, const char *Name, LLVMValueRef Fn) {
+  return LLVMAppendBasicBlockInContext(C, Fn, Name);
+}
+
+/* llcontext * string * llbasicblock -> llbasicblock */
+extern "C"
+LLVMBasicBlockRef llvm_insert_block(LLVMContextRef C, const char *Name, LLVMBasicBlockRef BB) {
+  return LLVMInsertBasicBlockInContext(C, BB, Name);
+}
+
+/* llvalue -> (llvalue, llbasicblock) llpos */
+extern "C"
+void *llvm_block_begin(LLVMValueRef Fn, int *Tag) {
+  LLVMBasicBlockRef First = LLVMGetFirstBasicBlock(Fn);
+  if (First) {
+    (*Tag) = 1;
+    return First;
+  } else {
+    (*Tag) = 0;
+    return Fn;
+  }
+}
+
+/* llbasicblock -> (llvalue, llbasicblock) llpos */
+extern "C"
+void *llvm_block_succ(LLVMBasicBlockRef BB, int *Tag) {
+  LLVMBasicBlockRef Next = LLVMGetNextBasicBlock(BB);
+  if (Next) {
+    (*Tag) = 1;
+    return Next;
+  } else {
+    (*Tag) = 0;
+    return LLVMGetBasicBlockParent(BB);
+  }
+}
+
+/* llvalue -> (llvalue, llbasicblock) llrev_pos */
+extern "C"
+void *llvm_block_end(LLVMValueRef Fn, int *Tag) {
+  LLVMBasicBlockRef Last = LLVMGetLastBasicBlock(Fn);
+  if (Last) {
+    (*Tag) = 1;
+    return Last;
+  } else {
+    (*Tag) = 0;
+    return Fn;
+  }
+}
+
+/* llbasicblock -> (llvalue, llbasicblock) llrev_pos */
+extern "C"
+void *llvm_block_pred(LLVMBasicBlockRef BB, int *Tag) {
+  LLVMBasicBlockRef Prev = LLVMGetPreviousBasicBlock(BB);
+  if (Prev) {
+    (*Tag) = 1;
+    return Prev;
+  } else {
+    (*Tag) = 0;
+    return LLVMGetBasicBlockParent(BB);
+  }
+}
+
+/* llbasicblock -> llvalue option */
+extern "C"
+void *llvm_block_terminator(LLVMBasicBlockRef BB) {
+  LLVMValueRef Term = LLVMGetBasicBlockTerminator(BB);
+  if (Term) {
+    return Term;
+  } else {
+    return NULL;
+  }
+}
+
+/*--... Operations on instructions .........................................--*/
+
+/* llvalue -> llbasicblock */
+extern "C"
+void *llvm_instr_parent(LLVMValueRef Inst) {
+  return LLVMGetInstructionParent(Inst);
+}
+
+/* llbasicblock -> (llbasicblock, llvalue) llpos */
+extern "C"
+void *llvm_instr_begin(LLVMBasicBlockRef BB, int *Tag) {
+  LLVMValueRef First = LLVMGetFirstInstruction(BB);
+  if (First) {
+    (*Tag) = 1;
+    return First;
+  } else {
+    (*Tag) = 0;
+    return BB;
+  }
+}
+
+/* llvalue -> (llbasicblock, llvalue) llpos */
+extern "C"
+void *llvm_instr_succ(LLVMValueRef Val, int *Tag) {
+  LLVMValueRef Next = LLVMGetNextInstruction(Val);
+  if (Next) {
+    (*Tag) = 1;
+    return Next;
+  } else {
+    (*Tag) = 0;
+    return LLVMGetInstructionParent(Val);
+  }
+}
+
+/* llbasicblock -> (llbasicblock, llvalue) llrev_pos */
+extern "C"
+void *llvm_instr_end(LLVMBasicBlockRef BB, int *Tag) {
+  LLVMValueRef Last = LLVMGetLastInstruction(BB);
+  if (Last) {
+    (*Tag) = 1;
+    return Last;
+  } else {
+    (*Tag) = 0;
+    return BB;
+  }
+}
+
+/* llvalue -> (llbasicblock, llvalue) llrev_pos */
+extern "C"
+void *llvm_instr_pred(LLVMValueRef Val, int *Tag) {
+  LLVMValueRef Prev = LLVMGetPreviousInstruction(Val);
+  if (Prev) {
+    (*Tag) = 1;
+    return Prev;
+  } else {
+    (*Tag) = 0;
+    return LLVMGetInstructionParent(Val);
+  }
+}
+
+/* llvalue -> Opcode.t */
+extern "C"
+int llvm_instr_opcode(LLVMValueRef Inst) {
+  LLVMOpcode O;
+  if (!LLVMIsAInstruction(Inst)) {
+    /* TODO: throw an exception */
+    assert(0);
+  }
+  O = LLVMGetInstructionOpcode(Inst);
+  assert(O <= LLVMLandingPad);
+  return O;
+}
+
+/* llvalue -> Icmp.t option */
+extern "C"
+int *llvm_icmp_predicate(LLVMValueRef Inst) {
+  int X = LLVMGetICmpPredicate(Inst);
+  if (X) {
+    int *Res = (int *) malloc(sizeof(int));
+    (*Res) = X - LLVMIntEQ;
+    return Res;
+  } else {
+    return NULL;
+  }
+}
+
+/* llvalue -> Fcmp.t option */
+extern "C"
+int *llvm_fcmp_predicate(LLVMValueRef Inst) {
+  int X = LLVMGetFCmpPredicate(Inst);
+  if (X) {
+    int *Res = (int *) malloc(sizeof(int));
+    (*Res) = X - LLVMRealPredicateFalse;
+    return Res;
+  } else {
+    return NULL;
+  }
+}
+
+/* llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_instr_clone(LLVMValueRef Inst) {
+  if (!LLVMIsAInstruction(Inst)) {
+    /* TODO: throw an exception */
+    assert(0);
+  }
+  return LLVMInstructionClone(Inst);
+}
+
+/*--... Operations on call sites ...........................................--*/
+
+/* llvalue -> int */
+extern "C"
+int llvm_instruction_call_conv(LLVMValueRef Inst) {
+  return LLVMGetInstructionCallConv(Inst);
+}
+
+/* int * llvalue -> unit */
+extern "C"
+void llvm_set_instruction_call_conv(int CC, LLVMValueRef Inst) {
+  LLVMSetInstructionCallConv(Inst, CC);
+}
+
+/* llvalue * int * Int32.int -> unit */
+extern "C"
+void llvm_add_instruction_param_attr(LLVMValueRef Inst, int Index, int PA) {
+  LLVMAddInstrAttribute(Inst, Index, (LLVMAttribute) PA);
+}
+
+/* llvalue * int * Int32.int -> unit */
+extern "C"
+void llvm_remove_instruction_param_attr(LLVMValueRef Inst, int Index, int PA) {
+  LLVMRemoveInstrAttribute(Inst, Index, (LLVMAttribute) PA);
+}
+
+/*--... Operations on call instructions (only) .............................--*/
+
+/* llvalue -> bool */
+extern "C"
+int llvm_is_tail_call(LLVMValueRef CallInst) {
+  return LLVMIsTailCall(CallInst);
+}
+
+/* bool * llvalue -> unit */
+extern "C"
+void llvm_set_tail_call(int IsTailCall, LLVMValueRef CallInst) {
+  LLVMSetTailCall(CallInst, IsTailCall);
+}
+
+/*--... Operations on load/store instructions (only)........................--*/
+
+/* llvalue -> bool */
+extern "C"
+int llvm_is_volatile(LLVMValueRef MemoryInst) {
+  return LLVMGetVolatile(MemoryInst);
+}
+
+/* bool * llvalue -> unit */
+extern "C"
+void llvm_set_volatile(int IsVolatile, LLVMValueRef MemoryInst) {
+  LLVMSetVolatile(MemoryInst, IsVolatile);
+}
+
+/*--.. Operations on terminators ...........................................--*/
+
+/* llvalue * int -> llbasicblock */
+extern "C"
+LLVMBasicBlockRef llvm_successor(LLVMValueRef Val, int I) {
+  return LLVMGetSuccessor(Val, I);
+}
+
+/* llvalue * int * llbasicblock -> unit */
+extern "C"
+void llvm_set_successor(LLVMValueRef Val, int I, LLVMBasicBlockRef BB) {
+  LLVMSetSuccessor(Val, I, BB);
+}
+
+/* llvalue -> int */
+extern "C"
+int llvm_num_successors(LLVMValueRef Val) {
+  return LLVMGetNumSuccessors(Val);
+}
+
+/*--.. Operations on branch ................................................--*/
+
+/* llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_condition(LLVMValueRef Val) {
+  return LLVMGetCondition(Val);
+}
+
+/* llvalue * llvalue -> unit */
+extern "C"
+void llvm_set_condition(LLVMValueRef B, LLVMValueRef C) {
+  LLVMSetCondition(B, C);
+}
+
+/* llvalue -> bool */
+extern "C"
+int llvm_is_conditional(LLVMValueRef Val) {
+  return LLVMIsConditional(Val);
+}
+
+/*--... Operations on phi nodes ............................................--*/
+
+/* (llvalue * llbasicblock) * llvalue -> unit */
+extern "C"
+void llvm_add_incoming(LLVMValueRef Val, LLVMBasicBlockRef BB, LLVMValueRef PhiNode) {
+  LLVMAddIncoming(PhiNode, &Val, &BB, 1);
+}
+
+/* llvalue -> (llvalue * llbasicblock) list */
+extern "C"
+void **llvm_incoming(LLVMValueRef PhiNode, int *Len) {
+  int Size = LLVMCountIncoming(PhiNode) * 2;
+  int I, J;
+  void **Res = (void **) malloc(sizeof(void *) * Size);
+  for (I = 0, J = 0; I < Size; I += 2, J += 1) {
+    Res[I] = LLVMGetIncomingValue(PhiNode, J);
+    Res[I + 1] = LLVMGetIncomingBlock(PhiNode, J);
+  }
+  (*Len) = Size;
+  return Res;
+}
+
+/* llvalue -> unit */
+extern "C"
+void llvm_delete_instruction(LLVMValueRef Inst) {
+  LLVMInstructionEraseFromParent(Inst);
+}
+
+/*===-- Instruction builders ----------------------------------------------===*/
+
+/* llcontext -> llbuilder */
+extern "C"
+LLVMBuilderRef llvm_builder(LLVMContextRef C) {
+  return LLVMCreateBuilderInContext(C);
+}
+
+/* (llbasicblock, llvalue) llpos * llbuilder -> unit */
+extern "C"
+void llvm_position_builder(void *Pos, int Tag, LLVMBuilderRef B) {
+  if (Tag == 0) {
+    LLVMBasicBlockRef BB = (LLVMBasicBlockRef) Pos;
+    LLVMPositionBuilderAtEnd(B, BB);
+  } else {
+    LLVMValueRef I = (LLVMValueRef) Pos;
+    LLVMPositionBuilderBefore(B, I);
+  }
+}
+
+/* llbuilder -> llbasicblock */
+extern "C"
+LLVMBasicBlockRef llvm_insertion_block(LLVMBuilderRef B) {
+  LLVMBasicBlockRef InsertBlock = LLVMGetInsertBlock(B);
+  if (!InsertBlock) {
+    /* TODO: throw an exception */
+    assert(0);
+  }
+  return InsertBlock;
+}
+
+/* llvalue * string * llbuilder -> unit */
+extern "C"
+void llvm_insert_into_builder(LLVMValueRef Inst, const char *Name, LLVMBuilderRef B) {
+  LLVMInsertIntoBuilderWithName(B, Inst, Name);
+}
+
+/*--... Metadata ...........................................................--*/
+
+/* llbuilder * llvalue -> unit */
+extern "C"
+void llvm_set_current_debug_location(LLVMBuilderRef B, LLVMValueRef Val) {
+  LLVMSetCurrentDebugLocation(B, Val);
+}
+
+/* llbuilder -> unit */
+extern "C"
+void llvm_clear_current_debug_location(LLVMBuilderRef B) {
+  LLVMSetCurrentDebugLocation(B, NULL);
+}
+
+/* llbuilder -> llvalue option */
+extern "C"
+LLVMValueRef llvm_current_debug_location(LLVMBuilderRef B) {
+  LLVMValueRef L;
+  if ((L = LLVMGetCurrentDebugLocation(B))) {
+    return L;
+  } else {
+    return NULL;
+  }
+}
+
+/* llbuilder * llvalue -> unit */
+extern "C"
+void llvm_set_inst_debug_location(LLVMBuilderRef B, LLVMValueRef Val) {
+  LLVMSetInstDebugLocation(B, Val);
+}
+
+/*--... Terminators ........................................................--*/
+
+/* llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_ret_void(LLVMBuilderRef B) {
+  return LLVMBuildRetVoid(B);
+}
+
+/* llvalue * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_ret(LLVMValueRef Val, LLVMBuilderRef B) {
+  return LLVMBuildRet(B, Val);
+}
+
+/* llvalue array * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_aggregate_ret(LLVMValueRef *RetVals, int RetCount, LLVMBuilderRef B) {
+  return LLVMBuildAggregateRet(B, RetVals, RetCount);
+}
+
+/* llbasicblock * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_br(LLVMBasicBlockRef BB, LLVMBuilderRef B) {
+  return LLVMBuildBr(B, BB);
+}
+
+/* llvalue * llbasicblock * llbasicblock * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_cond_br(LLVMValueRef If, LLVMBasicBlockRef Then, LLVMBasicBlockRef Else, LLVMBuilderRef B) {
+  return LLVMBuildCondBr(B, If, Then, Else);
+}
+
+/* llvalue * llbasicblock * int * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_switch(LLVMValueRef Of, LLVMBasicBlockRef Else, int EstimatedCount, LLVMBuilderRef B) {
+  return LLVMBuildSwitch(B, Of, Else, EstimatedCount);
+}
+
+/* lltype * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_malloc(LLVMTypeRef Ty, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildMalloc(B, Ty, Name);
+}
+
+/* lltype * llvalue * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_array_malloc(LLVMTypeRef Ty, LLVMValueRef Val, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildArrayMalloc(B, Ty, Val, Name);
+}
+
+/* llvalue * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_free(LLVMValueRef P, LLVMBuilderRef B) {
+  return LLVMBuildFree(B, P);
+}
+
+/* llvalue * llvalue * llbasicblock -> unit */
+extern "C"
+void llvm_add_case(LLVMValueRef Switch, LLVMValueRef OnVal, LLVMBasicBlockRef Dest) {
+  LLVMAddCase(Switch, OnVal, Dest);
+}
+
+/* llvalue -> llbasicblock */
+extern "C"
+LLVMBasicBlockRef llvm_switch_default_dest(LLVMValueRef Val) {
+  return LLVMGetSwitchDefaultDest(Val);
+}
+
+/* llvalue * int * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_indirect_br(LLVMValueRef Addr, int EstimatedDests, LLVMBuilderRef B) {
+  return LLVMBuildIndirectBr(B, Addr, EstimatedDests);
+}
+
+/* llvalue * llbasicblock -> unit */
+extern "C"
+void llvm_add_destination(LLVMValueRef IndirectBr, LLVMBasicBlockRef Dest) {
+  LLVMAddDestination(IndirectBr, Dest);
+}
+
+/* llvalue * llvalue array * llbasicblock * llbasicblock * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_invoke(LLVMValueRef Fn, LLVMValueRef *Args, int ArgCount, LLVMBasicBlockRef Then, LLVMBasicBlockRef Catch, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildInvoke(B, Fn, Args, ArgCount, Then, Catch, Name);
+}
+
+/* lltype * llvalue * int * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_landingpad(LLVMTypeRef Ty, LLVMValueRef PersFn, int NumClauses, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildLandingPad(B, Ty, PersFn, NumClauses, Name);
+}
+
+/* llvalue * bool -> unit */
+extern "C"
+void llvm_set_cleanup(LLVMValueRef LandingPadInst, int Flag) {
+  LLVMSetCleanup(LandingPadInst, Flag);
+}
+
+/* llvalue * llvalue -> unit */
+extern "C"
+void llvm_add_clause(LLVMValueRef LandingPadInst, LLVMValueRef ClauseVal) {
+  LLVMAddClause(LandingPadInst, ClauseVal);
+}
+
+/* llvalue * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_resume(LLVMValueRef Exn, LLVMBuilderRef B) {
+  return LLVMBuildResume(B, Exn);
+}
+
+/* llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_unreachable(LLVMBuilderRef B) {
+  return LLVMBuildUnreachable(B);
+}
+
+/*--... Arithmetic .........................................................--*/

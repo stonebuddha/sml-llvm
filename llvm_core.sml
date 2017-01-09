@@ -2094,11 +2094,11 @@ fun position_builder (Pos : (llbasicblock, llvalue) llpos) (B : llbuilder) =
       At_end BB => F_llvm_position_builder.f (BB, 0, B)
     | Before Inst => F_llvm_position_builder.f (Inst, 1, B)
 fun insertion_block (B : llbuilder) : llbasicblock = F_llvm_insertion_block.f B
-fun insert_into_builder (Instr : llvalue) (Name : string) (B : llbuilder) : unit =
+fun insert_into_builder (Inst : llvalue) (Name : string) (B : llbuilder) : unit =
   let
       val Name' = ZString.dupML Name
   in
-      F_llvm_insert_into_builder.f (Instr, Name', B)
+      F_llvm_insert_into_builder.f (Inst, Name', B)
       before
       C.free Name'
   end
@@ -2127,7 +2127,7 @@ fun current_debug_location (B : llbuilder) : llvalue option =
       if C.Ptr.isNull' Res then NONE
       else SOME Res
   end
-fun set_inst_debug_location (B : llbuilder) (Inst : llvalue) : unit = F_llvm_set_inst_debug_location.f (B, Inst)
+fun set_inst_debug_location (B : llbuilder) (Val : llvalue) : unit = F_llvm_set_inst_debug_location.f (B, Val)
 
 (*--... Terminators ........................................................--*)
 val build_ret_void : llbuilder -> llvalue = fn B => F_llvm_build_ret_void.f B
@@ -2186,7 +2186,7 @@ val build_landingpad : lltype -> llvalue -> int -> string -> llbuilder -> llvalu
         before
         C.free Name'
     end
-val set_cleanup : llvalue -> bool -> unit = fn LandingPadInst => fn flag => F_llvm_set_cleanup.f (LandingPadInst, if flag then 1 else 0)
+val set_cleanup : llvalue -> bool -> unit = fn LandingPadInst => fn Flag => F_llvm_set_cleanup.f (LandingPadInst, if Flag then 1 else 0)
 val add_clause : llvalue -> llvalue -> unit = fn LandingPadInst => fn ClauseVal => F_llvm_add_clause.f (LandingPadInst, ClauseVal)
 val build_resume : llvalue -> llbuilder -> llvalue = fn Exn => fn B => F_llvm_build_resume.f (Exn, B)
 val build_unreachable : llbuilder -> llvalue = fn B => F_llvm_build_unreachable.f B
