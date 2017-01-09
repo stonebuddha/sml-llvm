@@ -1,11 +1,12 @@
-$(SML_LIB)/basis/basis.mlb
-$(SML_LIB)/basis/mlton.mlb
-$(SML_LIB)/mlnlffi-lib/mlnlffi-lib.mlb
-FFI64/llvm.mlb
+local
+  $(SML_LIB)/basis/basis.mlb
+  $(SML_LIB)/basis/mlton.mlb
+  $(SML_LIB)/mlnlffi-lib/mlnlffi-lib.mlb
+  FFI64/llvm.mlb
 
-llvm_core.sig
-llvm_core.sml
-
-test.sml
-
-mlton-test.sml
+  llvm_core.sig
+  llvm_core.sml
+in
+  signature LLVM_CORE
+  structure LlvmCore
+end

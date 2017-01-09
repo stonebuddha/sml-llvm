@@ -1,10 +1,7 @@
+.cm
+
 FFI32
 FFI64
 
 *.dylib
 *.dSYM
-
-test
-test-image*
-
-.cm

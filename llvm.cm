@@ -1,10 +1,11 @@
-Group is
+Library
+  signature LLVM_CORE
+  structure LlvmCore
+is
   $/basis.cm
   $/smlnj-lib.cm
   $c/c.cm
-  FFI32/llvm.cm
+  FFI32/llvm.cm : make (-f llvm32.make)
 
   llvm_core.sig
   llvm_core.sml
-
-  test.sml
