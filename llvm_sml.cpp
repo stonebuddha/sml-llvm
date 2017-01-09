@@ -695,6 +695,7 @@ const char *llvm_get_mdstring(LLVMValueRef Val) {
 
     Str = (char *) malloc(sizeof(char) * (Len + 1));
     memcpy(Str, S, sizeof(char) * Len);
+    Str[Len] = '\0';
     return Str;
   } else {
     return NULL;
@@ -846,6 +847,7 @@ const char *llvm_string_of_const(LLVMValueRef Val) {
     S = LLVMGetAsString(Val, &Len);
     Str = (char *) malloc(sizeof(char) * (Len + 1));
     memcpy(Str, S, Len);
+    Str[Len] = '\0';
 
     return Str;
   } else {
@@ -2488,3 +2490,191 @@ LLVMValueRef llvm_build_fcmp(int Pred, LLVMValueRef LHS, LLVMValueRef RHS, const
 }
 
 /*--... Miscellaneous instructions .........................................--*/
+
+/* (llvalue * llbasicblock) list * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_phi(LLVMValueRef *Vals, LLVMBasicBlockRef *BBs, int Count, const char *Name, LLVMBuilderRef B) {
+  LLVMValueRef PhiNode;
+  int I;
+
+  assert(Count > 0);
+
+  PhiNode = LLVMBuildPhi(B, LLVMTypeOf(Vals[0]), Name);
+  for (I = 0; I < Count; I += 1) {
+    LLVMAddIncoming(PhiNode, &Vals[I], &BBs[I], 1);
+  }
+
+  return PhiNode;
+}
+
+/* lltype * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_empty_phi(LLVMTypeRef Ty, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildPhi(B, Ty, Name);
+}
+
+/* llvalue * llvalue * llvalue * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_select(LLVMValueRef If, LLVMValueRef Then, LLVMValueRef Else, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildSelect(B, If, Then, Else, Name);
+}
+
+/* llvalue * lltype * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_va_arg(LLVMValueRef List, LLVMTypeRef Ty, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildVAArg(B, List, Ty, Name);
+}
+
+/* llvalue * llvalue * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_extractelement(LLVMValueRef Vec, LLVMValueRef Idx, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildExtractElement(B, Vec, Idx, Name);
+}
+
+/* llvalue * llvalue * llvalue * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_insertelement(LLVMValueRef Vec, LLVMValueRef Elem, LLVMValueRef Idx, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildInsertElement(B, Vec, Elem, Idx, Name);
+}
+
+/* llvalue * llvalue * llvalue * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_shufflevector(LLVMValueRef V1, LLVMValueRef V2, LLVMValueRef Mask, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildShuffleVector(B, V1, V2, Mask, Name);
+}
+
+/* llvalue * int * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_extractvalue(LLVMValueRef Aggregate, int Idx, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildExtractValue(B, Aggregate, Idx, Name);
+}
+
+/* llvalue * llvalue * int * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_insertvalue(LLVMValueRef Aggregate, LLVMValueRef Val, int Idx, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildInsertValue(B, Aggregate, Val, Idx, Name);
+}
+
+/* llvalue * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_is_null(LLVMValueRef Val, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildIsNull(B, Val, Name);
+}
+
+/* llvalue * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_is_not_null(LLVMValueRef Val, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildIsNotNull(B, Val, Name);
+}
+
+/* llvalue * llvalue * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_ptrdiff(LLVMValueRef LHS, LLVMValueRef RHS, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildPtrDiff(B, LHS, RHS, Name);
+}
+
+/*===-- Memory buffers ----------------------------------------------------===*/
+
+/* string * llmemorybuffer */
+extern "C"
+LLVMMemoryBufferRef llvm_memorybuffer_of_file(const char *Path) {
+  char *Message;
+  LLVMMemoryBufferRef MemBuf;
+
+  if (LLVMCreateMemoryBufferWithContentsOfFile(Path, &MemBuf, &Message)) {
+    /* TODO: throw an exception */
+    assert(0);
+  }
+
+  return MemBuf;
+}
+
+/* unit -> llmemorybuffer */
+extern "C"
+LLVMMemoryBufferRef llvm_memorybuffer_of_stdin(void) {
+  char *Message;
+  LLVMMemoryBufferRef MemBuf;
+
+  if (LLVMCreateMemoryBufferWithSTDIN(&MemBuf, &Message)) {
+    /* TODO: throw an exception */
+    assert(0);
+  }
+
+  return MemBuf;
+}
+
+/* string option * string -> llmemorybuffer */
+extern "C"
+LLVMMemoryBufferRef llvm_memorybuffer_of_string(const char *Name, const char *String) {
+  LLVMMemoryBufferRef MemBuf;
+  const char *NameCStr;
+
+  if (Name == NULL) {
+    NameCStr = "";
+  } else {
+    NameCStr = Name;
+  }
+
+  MemBuf = LLVMCreateMemoryBufferWithMemoryRangeCopy(String, strlen(String), NameCStr);
+
+  return MemBuf;
+}
+
+/* llmemorybuffer -> string */
+extern "C"
+const char *llvm_memorybuffer_as_string(LLVMMemoryBufferRef MemBuf) {
+  char *String = (char *) malloc(sizeof(char) * (LLVMGetBufferSize(MemBuf) + 1));
+  memcpy(String, LLVMGetBufferStart(MemBuf), LLVMGetBufferSize(MemBuf));
+  String[LLVMGetBufferSize(MemBuf)] = '\0';
+  return String;
+}
+
+/* llmemorybuffer -> unit */
+extern "C"
+void llvm_memorybuffer_dispose(LLVMMemoryBufferRef MemBuf) {
+  LLVMDisposeMemoryBuffer(MemBuf);
+}
+
+/*===-- Pass Managers -----------------------------------------------------===*/
+
+/* unit -> PassManager.Module PassManager.t */
+extern "C"
+LLVMPassManagerRef llvm_passmanager_create(void) {
+  return LLVMCreatePassManager();
+}
+
+/* llmodule -> PassManager.Function PassManager.t */
+extern "C"
+LLVMPassManagerRef llvm_passmanager_create_function(LLVMModuleRef M) {
+  return LLVMCreateFunctionPassManager((LLVMModuleProviderRef) M);
+}
+
+/* llmodule * PassManager.Function PassManager.t -> bool */
+extern "C"
+int llvm_passmanager_run_module(LLVMModuleRef M, LLVMPassManagerRef PM) {
+  return LLVMRunPassManager(PM, M);
+}
+
+/* PassManager.Function PassManager.t -> bool */
+extern "C"
+int llvm_passmanager_initialize(LLVMPassManagerRef FPM) {
+  return LLVMInitializeFunctionPassManager(FPM);
+}
+
+/* llvalue * PassManager.Function PassManager.t -> bool */
+extern "C"
+int llvm_passmanager_run_function(LLVMValueRef Fn, LLVMPassManagerRef FPM) {
+  return LLVMRunFunctionPassManager(FPM, Fn);
+}
+
+/* PassManager.Function PassManager.t -> bool */
+extern "C"
+int llvm_passmanager_finalize(LLVMPassManagerRef FPM) {
+  return LLVMFinalizeFunctionPassManager(FPM);
+}
+
+/* PassManager.any PassManager.t -> unit */
+extern "C"
+void llvm_passmanager_dispose(LLVMPassManagerRef PM) {
+  LLVMDisposePassManager(PM);
+}
