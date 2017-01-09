@@ -2089,7 +2089,7 @@ fun delete_instruction (Inst : llvalue) : unit = F_llvm_delete_instruction.f Ins
 
 (*===-- Instruction builders ----------------------------------------------===*)
 fun builder (C : llcontext) : llbuilder = F_llvm_builder.f C
-fun position_builder (Pos : (llbasicblock, llvalue) llpos) (B : llbuilder) =
+fun position_builder (Pos : (llbasicblock, llvalue) llpos) (B : llbuilder) : unit =
   case Pos of
       At_end BB => F_llvm_position_builder.f (BB, 0, B)
     | Before Inst => F_llvm_position_builder.f (Inst, 1, B)
@@ -2106,7 +2106,7 @@ fun insert_into_builder (Inst : llvalue) (Name : string) (B : llbuilder) : unit 
 fun builder_at context ip =
   let
       val b = builder context
-      val () = position_builder ip context
+      val () = position_builder ip b
   in
       b
   end
