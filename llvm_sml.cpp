@@ -2335,3 +2335,156 @@ LLVMValueRef llvm_build_unreachable(LLVMBuilderRef B) {
 }
 
 /*--... Arithmetic .........................................................--*/
+
+// #define DEFINE_BINOP(mlname, cname) \
+//   /* llvalue * llvalue * string * llbuilder -> llvalue */ \
+//   extern "C" \
+//   LLVMValueRef llvm_build_##mlname(LLVMValueRef LHS, LLVMValueRef RHS, const char *Name, LLVMBuilderRef B) { \
+//     return LLVMBuild##cname(B, LHS, RHS, Name); \
+//   }
+// #define DEFINE_UNOP(mlname, cname) \
+//   /* llvalue * string * llbuilder -> llvalue */ \
+//   extern "C" \\
+//   LLVMValueRef llvm_build_##mlname(LLVMValueRef X, const char *Name, LLVMBuilderRef B) { \
+//     return LLVMBuild##cname(B, X, Name); \
+//   }
+
+// DEFINE_BINOP(add, Add)
+// DEFINE_BINOP(nsw_add, NSWAdd)
+// DEFINE_BINOP(nuw_add, NUWAdd)
+// DEFINE_BINOP(fadd, FAdd)
+// DEFINE_BINOP(sub, Sub)
+// DEFINE_BINOP(nsw_sub, NSWSub)
+// DEFINE_BINOP(nuw_sub, NUWSub)
+// DEFINE_BINOP(fsub, FSub)
+// DEFINE_BINOP(mul, Mul)
+// DEFINE_BINOP(nsw_mul, NSWMul)
+// DEFINE_BINOP(nuw_mul, NUWMul)
+// DEFINE_BINOP(fmul, FMul)
+// DEFINE_BINOP(udiv, UDiv)
+// DEFINE_BINOP(sdiv, SDiv)
+// DEFINE_BINOP(exact_sdiv, ExactSDiv)
+// DEFINE_BINOP(fdiv, FDiv)
+// DEFINE_BINOP(urem, URem)
+// DEFINE_BINOP(srem, SRem)
+// DEFINE_BINOP(frem, FRem)
+// DEFINE_BINOP(shl, Shl)
+// DEFINE_BINOP(lshr, LShr)
+// DEFINE_BINOP(ashr, AShr)
+// DEFINE_BINOP(and, And)
+// DEFINE_BINOP(or, Or)
+// DEFINE_BINOP(xor, Xor)
+// DEFINE_UNOP(neg, Neg)
+// DEFINE_UNOP(nsw_neg, NSWNeg)
+// DEFINE_UNOP(nuw_neg, NUWNeg)
+// DEFINE_UNOP(fneg, FNeg)
+// DEFINE_UNOP(not, Not)
+
+/*--... Memory .............................................................--*/
+
+/* lltype * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_alloca(LLVMTypeRef Ty, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildAlloca(B, Ty, Name);
+}
+
+/* lltype * llvalue * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_array_alloca(LLVMTypeRef Ty, LLVMValueRef Size, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildArrayAlloca(B, Ty, Size, Name);
+}
+
+/* llvalue * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_load(LLVMValueRef Ptr, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildLoad(B, Ptr, Name);
+}
+
+/* llvalue * llvalue * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_store(LLVMValueRef Val, LLVMValueRef Ptr, LLVMBuilderRef B) {
+  return LLVMBuildStore(B, Val, Ptr);
+}
+
+/* AtomicRMWBinOp.t * llvalue * llvalue * AtomicOrdering.t * bool * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_atomicrmw(int BinOp, LLVMValueRef Ptr, LLVMValueRef Val, int Ord, int ST, const char *Name, LLVMBuilderRef B) {
+  LLVMValueRef Inst;
+  Inst = LLVMBuildAtomicRMW(B, (LLVMAtomicRMWBinOp) BinOp, Ptr, Val, (LLVMAtomicOrdering) Ord, ST);
+  LLVMSetValueName(Inst, Name);
+  return Inst;
+}
+
+/* llvalue * llvalue array * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_gep(LLVMValueRef Ptr, LLVMValueRef *Indices, int IndexCount, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildGEP(B, Ptr, Indices, IndexCount, Name);
+}
+
+/* llvalue * llvalue array * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_in_bounds_gep(LLVMValueRef Ptr, LLVMValueRef *Indices, int IndexCount, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildInBoundsGEP(B, Ptr, Indices, IndexCount, Name);
+}
+
+/* llvalue * int * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_struct_gep(LLVMValueRef Ptr, int Index, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildStructGEP(B, Ptr, Index, Name);
+}
+
+/* string * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_global_string(const char *Str, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildGlobalString(B, Str, Name);
+}
+
+/* string * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_global_stringptr(const char *Str, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildGlobalStringPtr(B, Str, Name);
+}
+
+/*--... Casts ..............................................................--*/
+
+// #define DEFINE_CAST(mlname, cname) \
+//   /* llvalue * lltype * string * llbuilder -> llvalue */ \
+//   extern "C" \
+//   LLVMValueRef llvm_build_##mlname(LLVMValueRef X, LLVMTypeRef Ty, const char *Name, LLVMBuilderRef B) { \
+//     return LLVMBuild##cname(B, X, Ty, Name); \
+//   }
+
+// DEFINE_CAST(trunc, Trunc)
+// DEFINE_CAST(zext, ZExt)
+// DEFINE_CAST(sext, SExt)
+// DEFINE_CAST(fptoui, FPToUI)
+// DEFINE_CAST(fptosi, FPToSI)
+// DEFINE_CAST(uitofp, UIToFP)
+// DEFINE_CAST(sitofp, SIToFP)
+// DEFINE_CAST(fptrunc, FPTrunc)
+// DEFINE_CAST(fpext, FPExt)
+// DEFINE_CAST(ptrtoint, PtrToInt)
+// DEFINE_CAST(inttoptr, IntToPtr)
+// DEFINE_CAST(bitcast, BitCast)
+// DEFINE_CAST(zext_or_bitcast, ZExtOrBitCast)
+// DEFINE_CAST(sext_or_bitcast, SExtOrBitCast)
+// DEFINE_CAST(trunc_or_bitcast, TruncOrBitCast)
+// DEFINE_CAST(pointercast, PointerCast)
+// DEFINE_CAST(intcast, IntCast)
+// DEFINE_CAST(fpcast, FPCast)
+
+/*--... Comparisons ........................................................--*/
+
+/* Icmp.t * llvalue * llvalue * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_icmp(int Pred, LLVMValueRef LHS, LLVMValueRef RHS, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildICmp(B, (LLVMIntPredicate) (Pred + LLVMIntEQ), LHS, RHS, Name);
+}
+
+/* Fcmp.t * llvalue * llvalue * string * llbuilder -> llvalue */
+extern "C"
+LLVMValueRef llvm_build_fcmp(int Pred, LLVMValueRef LHS, LLVMValueRef RHS, const char *Name, LLVMBuilderRef B) {
+  return LLVMBuildFCmp(B, (LLVMRealPredicate) Pred, LHS, RHS, Name);
+}
+
+/*--... Miscellaneous instructions .........................................--*/
