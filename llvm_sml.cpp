@@ -1034,7 +1034,7 @@ LLVMValueRef llvm_const_xor(LLVMValueRef LHS, LLVMValueRef RHS) {
   return LLVMConstXor(LHS, RHS);
 }
 
-/* Icmp.t * llvalue * llvalue -> llvaue */
+/* Icmp.t * llvalue * llvalue -> llvalue */
 extern "C"
 LLVMValueRef llvm_const_icmp(int Pred, LLVMValueRef LHSConstant, LLVMValueRef RHSConstant) {
   return LLVMConstICmp((LLVMIntPredicate) (Pred + LLVMIntEQ), LHSConstant, RHSConstant);
@@ -1516,3 +1516,264 @@ void *llvm_global_pred(LLVMValueRef Val, int *Tag) {
 }
 
 /*--... Operations on aliases ..............................................--*/
+
+/* llmodule * lltype * llvalue * string -> llvalue */
+extern "C"
+LLVMValueRef llvm_add_alias(LLVMModuleRef M, LLVMTypeRef Ty, LLVMValueRef Aliasee, const char *Name) {
+  return LLVMAddAlias(M, Ty, Aliasee, Name);
+}
+
+/*--... Operations on functions ............................................--*/
+
+/* string * lltype * llmodule -> llvalue */
+extern "C"
+LLVMValueRef llvm_declare_function(const char *Name, LLVMTypeRef Ty, LLVMModuleRef M) {
+  LLVMValueRef Fn;
+  if ((Fn = LLVMGetNamedFunction(M, Name))) {
+    if (LLVMGetElementType(LLVMTypeOf(Fn)) != Ty) {
+      return LLVMConstBitCast(Fn, LLVMPointerType(Ty, 0));
+    } else {
+      return Fn;
+    }
+  } else {
+    return LLVMAddFunction(M, Name, Ty);
+  }
+}
+
+/* string * lltype * llmodule -> llvalue */
+extern "C"
+LLVMValueRef llvm_define_function(const char *Name, LLVMTypeRef Ty, LLVMModuleRef M) {
+  LLVMValueRef Fn = LLVMAddFunction(M, Name, Ty);
+  LLVMAppendBasicBlockInContext(LLVMGetTypeContext(Ty), Fn, "entry");
+  return Fn;
+}
+
+/* string * llmodule -> llvalue option */
+extern "C"
+LLVMValueRef llvm_lookup_function(const char *Name, LLVMModuleRef M) {
+  LLVMValueRef Fn;
+  if ((Fn = LLVMGetNamedFunction(M, Name))) {
+    return Fn;
+  } else {
+    return NULL;
+  }
+}
+
+/* llvalue -> unit */
+extern "C"
+void llvm_delete_function(LLVMValueRef Fn) {
+  LLVMDeleteFunction(Fn);
+}
+
+/* llvalue -> bool */
+extern "C"
+int llvm_is_intrinsic(LLVMValueRef Fn) {
+  return (LLVMGetIntrinsicID(Fn) > 0 ? 1 : 0);
+}
+
+/* llvalue ->int */
+extern "C"
+int llvm_function_call_conv(LLVMValueRef Fn) {
+  return LLVMGetFunctionCallConv(Fn);
+}
+
+/* int * llvalue -> unit */
+extern "C"
+void llvm_set_function_call_conv(int Id, LLVMValueRef Fn) {
+  LLVMSetFunctionCallConv(Fn, Id);
+}
+
+/* llvalue -> string option */
+extern "C"
+const char *llvm_gc(LLVMValueRef Fn) {
+  const char *GC;
+  const char *Name;
+
+  if ((GC = LLVMGetGC(Fn))) {
+    Name = copy_string(GC);
+    return Name;
+  } else {
+    return NULL;
+  }
+}
+
+/* string option * llvalue -> unit */
+extern "C"
+void llvm_set_gc(const char *GC, LLVMValueRef Fn) {
+  LLVMSetGC(Fn, GC == NULL ? NULL : GC);
+}
+
+/* llmodule -> (llmodule, llvalue) llpos */
+extern "C"
+void *llvm_function_begin(LLVMModuleRef M, int *Tag) {
+  LLVMValueRef First = LLVMGetFirstFunction(M);
+  if (First) {
+    (*Tag) = 1;
+    return First;
+  } else {
+    (*Tag) = 0;
+    return M;
+  }
+}
+
+/* llvalue -> (llmodule, llvalue) llpos */
+extern "C"
+void *llvm_function_succ(LLVMValueRef Val, int *Tag) {
+  LLVMValueRef Next = LLVMGetNextFunction(Val);
+  if (Next) {
+    (*Tag) = 1;
+    return Next;
+  } else {
+    (*Tag) = 0;
+    return LLVMGetGlobalParent(Val);
+  }
+}
+
+/* llmodule -> (llmodule, llvalue) llrev_pos */
+extern "C"
+void *llvm_function_end(LLVMModuleRef M, int *Tag) {
+  LLVMValueRef Last = LLVMGetLastFunction(M);
+  if (Last) {
+    (*Tag) = 1;
+    return Last;
+  } else {
+    (*Tag) = 0;
+    return M;
+  }
+}
+
+/* llvalue -> (llmodule, llvalue) llrev_pos */
+extern "C"
+void *llvm_function_pred(LLVMValueRef Val, int *Tag) {
+  LLVMValueRef Prev = LLVMGetPreviousFunction(Val);
+  if (Prev) {
+    (*Tag) = 1;
+    return Prev;
+  } else {
+    (*Tag) = 0;
+    return LLVMGetGlobalParent(Val);
+  }
+}
+
+/* llvalue * Int32.int -> unit */
+extern "C"
+void llvm_add_function_attr(LLVMValueRef Arg, int PA) {
+  LLVMAddFunctionAttr(Arg, (LLVMAttribute) PA);
+}
+
+/* llvalue * Int32.int -> unit */
+extern "C"
+void llvm_remove_function_attr(LLVMValueRef Arg, int PA) {
+  LLVMRemoveFunctionAttr(Arg, (LLVMAttribute) PA);
+}
+
+/* llvalue -> Int32.int */
+extern "C"
+int llvm_function_attr(LLVMValueRef Fn) {
+  return LLVMGetFunctionAttr(Fn);
+}
+
+/* llvalue * string * string -> unit */
+extern "C"
+void llvm_add_target_dependent_function_attr(LLVMValueRef Arg, const char *A, const char *V) {
+  LLVMAddTargetDependentFunctionAttr(Arg, A, V);
+}
+
+/*--... Operations on parameters ...........................................--*/
+
+/* llvalue -> llvalue array */
+extern "C"
+LLVMValueRef *llvm_params(LLVMValueRef Fn, int *Len) {
+  LLVMValueRef *Params = (LLVMValueRef *) malloc(sizeof(LLVMValueRef) * LLVMCountParams(Fn));
+  LLVMGetParams(Fn, Params);
+  (*Len) = LLVMCountParams(Fn);
+  return Params;
+}
+
+/* llvalue * int -> llvalue */
+extern "C"
+LLVMValueRef llvm_param(LLVMValueRef Fn, int Index) {
+  return LLVMGetParam(Fn, Index);
+}
+
+/* llvalue -> Int32.int */
+extern "C"
+int llvm_param_attr(LLVMValueRef Param) {
+  return LLVMGetAttribute(Param);
+}
+
+/* llvalue -> llvalue */
+extern "C"
+LLVMValueRef llvm_param_parent(LLVMValueRef Param) {
+  return LLVMGetParamParent(Param);
+}
+
+/* llvalue -> (llvalue, llvalue) llpos */
+extern "C"
+LLVMValueRef llvm_param_begin(LLVMValueRef Fn, int *Tag) {
+  LLVMValueRef First = LLVMGetFirstParam(Fn);
+  if (First) {
+    (*Tag) = 1;
+    return First;
+  } else {
+    (*Tag) = 0;
+    return Fn;
+  }
+}
+
+/* llvalue -> (llvalue, llvalue) llpos */
+extern "C"
+LLVMValueRef llvm_param_succ(LLVMValueRef Val, int *Tag) {
+  LLVMValueRef Next = LLVMGetNextParam(Val);
+  if (Next) {
+    (*Tag) = 1;
+    return Next;
+  } else {
+    (*Tag) = 0;
+    return LLVMGetParamParent(Val);
+  }
+}
+
+/* llvalue -> (llvalue, llvalue) llrev_pos */
+extern "C"
+LLVMValueRef llvm_param_end(LLVMValueRef Fn, int *Tag) {
+  LLVMValueRef Last = LLVMGetLastParam(Fn);
+  if (Last) {
+    (*Tag) = 1;
+    return Last;
+  } else {
+    (*Tag) = 0;
+    return Fn;
+  }
+}
+
+/* llvalue -> (llvalue, llvalue) llrev_pos */
+extern "C"
+LLVMValueRef llvm_param_pred(LLVMValueRef Val, int *Tag) {
+  LLVMValueRef Prev = LLVMGetPreviousParam(Val);
+  if (Prev) {
+    (*Tag) = 1;
+    return Prev;
+  } else {
+    (*Tag) = 0;
+    return LLVMGetParamParent(Val);
+  }
+}
+
+/* llvalue * Int32.int -> unit */
+extern "C"
+void llvm_add_param_attr(LLVMValueRef Arg, int PA) {
+  LLVMAddAttribute(Arg, (LLVMAttribute) PA);
+}
+
+/* llvalue * Int32.int -> unit */
+extern "C"
+void llvm_remove_param_attr(LLVMValueRef Arg, int PA) {
+  LLVMRemoveAttribute(Arg, (LLVMAttribute) PA);
+}
+
+/* llvalue * int -> unit */
+extern "C"
+void llvm_set_param_alignment(LLVMValueRef Arg, int Align) {
+  LLVMSetParamAlignment(Arg, Align);
+}
