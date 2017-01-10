@@ -8,23 +8,37 @@ stub32: FFI32/llvm.cm
 
 stub64: FFI64/llvm.mlb
 
-dynamic32: llvm32.dylib
+dynamic32: llvm_core.dylib
 
-shared64: llvm64.o
+shared64: llvm_core.o
 
 clean:
 	rm -rf .cm FFI32 FFI64 *.o *.dylib
 
-FFI32/llvm.cm: llvm_sml.h
+FFI32/llvm.cm: llvm_core.h
 	rm -rf FFI32
-	ml-nlffigen -include ../stub32.sml -libhandle Stub.libh -dir FFI32 -cmfile llvm.cm $^
+	mkdir FFI32
+	echo "structure Stub =\n\
+struct\n\
+local\n\
+    val lib = DynLinkage.open_lib { name = \"./llvm_core.dylib\", global = true, lazy = true }\n\
+in\n\
+fun libh s =\n\
+  let\n\
+      val sh = DynLinkage.lib_symbol (lib, s)\n\
+  in\n\
+       fn () => DynLinkage.addr sh\n\
+  end\n\
+end\n\
+end" > FFI32/stub.sml
+	ml-nlffigen -include stub.sml -libhandle Stub.libh -dir FFI32 -cmfile llvm.cm $^
 
-FFI64/llvm.mlb: llvm_sml.h
+FFI64/llvm.mlb: llvm_core.h
 	rm -rf FFI64
 	mlnlffigen -linkage shared -dir FFI64 -mlbfile llvm.mlb $^
 
-llvm32.dylib: llvm_sml.cpp
+llvm_core.dylib: llvm_core.cpp
 	g++ -m32 -dynamiclib `$(LLVMBIN32)/llvm-config --cxxflags --ldflags --system-libs --libs core` -o $@ $^
 
-llvm64.o: llvm_sml.cpp
+llvm_core.o: llvm_core.cpp
 	g++ -c `$(LLVMBIN64)/llvm-config --cxxflags` -o $@ $^
