@@ -5,7 +5,7 @@ is
   $/basis.cm
   $/smlnj-lib.cm
   $c/c.cm
-  FFI32/llvm.cm : make (-f llvm32.make)
+  FFI32/llvm.cm
 
   llvm_core.sig
   llvm_core.sml

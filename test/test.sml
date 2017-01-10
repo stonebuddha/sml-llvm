@@ -144,11 +144,11 @@ val ex2 : (defn list * expr) =
     ([], i 233)
 end
 
-fun main (prog_name : string, args : string list) : int =
+fun main (prog_name : string, args : string list) : OS.Process.status =
   let
       val () = compile ex1
   in
-      0
+      OS.Process.success
   end
 
 end

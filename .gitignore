@@ -3,5 +3,5 @@
 FFI32
 FFI64
 
+*.o
 *.dylib
-*.dSYM
