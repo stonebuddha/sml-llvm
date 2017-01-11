@@ -1,4 +1,4 @@
-structure LlvmCore :> LLVM_CORE =
+structure Llvm :> LLVM =
 struct
 
 infixr 0 $
@@ -2929,5 +2929,21 @@ fun finalize (FPM : Function t) : bool =
     | _ => raise (Fail "PassManager.finalize")
 fun dispose (PM : 'a t) : unit = F_llvm_passmanager_dispose.f PM
 end
+
+
+fun write_bitcode_file (M : llmodule) (Path : string) : bool =
+  let
+      val Path' = ZString.dupML Path
+  in
+      (case F_llvm_write_bitcode_file.f (M, Path') of
+           0 => false
+         | 1 => true
+         | _ => raise (Fail "write_bitcode"))
+      before
+      C.free Path'
+  end
+
+fun write_bitcode_to_memory_buffer (M : llmodule) : llmemorybuffer =
+  F_llvm_write_bitcode_to_memory_buffer.f M
 
 end
