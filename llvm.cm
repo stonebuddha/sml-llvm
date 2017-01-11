@@ -1,6 +1,9 @@
 Library
   signature LLVM_CORE
   structure LlvmCore
+
+  signature LLVM_BITWRITER
+  structure LlvmBitwriter
 is
   $/basis.cm
   $/smlnj-lib.cm
@@ -9,3 +12,6 @@ is
 
   llvm_core.sig
   llvm_core.sml
+
+  llvm_bitwriter.sig
+  llvm_bitwriter.sml
