@@ -40,8 +40,5 @@ FFI64/llvm.mlb: llvm_core.h llvm_bitwriter.h
 llvm.dylib: llvm_core.cpp llvm_bitwriter.cpp
 	g++ -m32 -dynamiclib `$(LLVMBIN32)/llvm-config --cxxflags --ldflags --system-libs --libs all` -o $@ $^
 
-llvm_core.o: llvm_core.cpp
-	g++ -c `$(LLVMBIN64)/llvm-config --cxxflags` -o $@ $^
-
-llvm_bitwriter.o: llvm_bitwriter.cpp
+%.o: %.cpp
 	g++ -c `$(LLVMBIN64)/llvm-config --cxxflags` -o $@ $^
