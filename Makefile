@@ -1,27 +1,27 @@
-.PHONY: default all stub32 stub64 dynamic32 shared64 clean
+.PHONY: default all stub32 stub64 shared32 shared64 clean
 
 default:
 
-all: stub32 stub64 dynamic32 shared64
+all: stub32 stub64 shared32 shared64
 
 stub32: FFI32/llvm.cm
 
 stub64: FFI64/llvm.mlb
 
-dynamic32: llvm.dylib
+shared32: libllvm32.so
 
-shared64: llvm_core.o llvm_bitwriter.o
+shared64: libllvm64.so
 
 clean:
-	rm -rf .cm FFI32 FFI64 *.o *.dylib
+	rm -rf .cm FFI32 FFI64 *.so *.dSYM
 
-FFI32/llvm.cm: llvm_core.h llvm_bitwriter.h
+FFI32/llvm.cm: llvm_sml_core.h llvm_sml_bitwriter.h
 	rm -rf FFI32
 	mkdir FFI32
 	echo "structure Stub =\n\
 struct\n\
 local\n\
-    val lib = DynLinkage.open_lib { name = \"./llvm.dylib\", global = true, lazy = true }\n\
+    val lib = DynLinkage.open_lib { name = \"./libllvm32.so\", global = true, lazy = true }\n\
 in\n\
 fun libh s =\n\
   let\n\
@@ -33,12 +33,12 @@ end\n\
 end" > FFI32/stub.sml
 	ml-nlffigen -include stub.sml -libhandle Stub.libh -dir FFI32 -cmfile llvm.cm $^
 
-FFI64/llvm.mlb: llvm_core.h llvm_bitwriter.h
+FFI64/llvm.mlb: llvm_sml_core.h llvm_sml_bitwriter.h
 	rm -rf FFI64
 	mlnlffigen -linkage shared -dir FFI64 -mlbfile llvm.mlb $^
 
-llvm.dylib: llvm_core.cpp llvm_bitwriter.cpp
-	g++ -m32 -dynamiclib `$(LLVMBIN32)/llvm-config --cxxflags --ldflags --system-libs --libs all` -o $@ $^
+libllvm32.so: llvm_sml_core.c llvm_sml_bitwriter.c
+	gcc -m32 -dynamiclib -lstdc++ `$(LLVMBIN32)/llvm-config --cflags --ldflags --system-libs --libs all` -o $@ $^
 
-%.o: %.cpp
-	g++ -c `$(LLVMBIN64)/llvm-config --cxxflags` -o $@ $^
+libllvm64.so: llvm_sml_core.c llvm_sml_bitwriter.c
+	gcc -shared -lstdc++ `$(LLVMBIN64)/llvm-config --cflags --ldflags --system-libs --libs all` -o $@ $^
