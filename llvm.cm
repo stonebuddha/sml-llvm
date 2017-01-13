@@ -4,6 +4,9 @@ Library
 
   signature LLVM_BITWRITER
   structure LlvmBitwriter
+
+  signature LLVM_TARGET
+  structure LlvmTarget
 is
   $/basis.cm
   $/smlnj-lib.cm
@@ -15,3 +18,6 @@ is
 
   llvm_bitwriter.sig
   llvm_bitwriter.sml
+
+  llvm_target.sig
+  llvm_target.sml

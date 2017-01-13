@@ -9,10 +9,16 @@ local
 
   llvm_bitwriter.sig
   llvm_bitwriter.sml
+
+  llvm_target.sig
+  llvm_target.sml
 in
   signature LLVM_CORE
   structure LlvmCore
 
   signature LLVM_BITWRITER
   structure LlvmBitwriter
+
+  signature LLVM_TARGET
+  structure LlvmTarget
 end
