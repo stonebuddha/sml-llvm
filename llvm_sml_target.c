@@ -258,7 +258,7 @@ LLVMMemoryBufferRef llvm_targetmachine_emit_to_memory_buffer(LLVMModuleRef Modul
   return Buffer;
 }
 
-/* TargetMachine.t * PassManager.t -> unit */
+/* PassManager.t * TargetMachine.t -> unit */
 void llvm_targetmachine_add_analysis_passes(LLVMPassManagerRef PM, LLVMTargetMachineRef Machine) {
   LLVMAddAnalysisPasses(Machine, PM);
 }
