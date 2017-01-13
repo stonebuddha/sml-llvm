@@ -4,3 +4,5 @@ test
 test-image*
 
 *.so
+
+*.bc

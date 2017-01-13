@@ -116,11 +116,12 @@ fun mk_module (program, run) =
       (m, c, main)
   end
 
-fun compile prog =
+fun compile prog filename =
   let
       val (m, c, _) = mk_module prog
   in
-      (L.dump_module m; L.dispose_module m; L.dispose_context c)
+      if not (LlvmBitwriter.write_bitcode_file m filename) then ()
+      else (L.dispose_module m; L.dispose_context c)
   end
 
 local
@@ -133,7 +134,7 @@ local
     fun apply n b = Apply (Var n, b)
 in
 val ex1 =
-    ([LetRec("fib", "n", iff (leq ($"n") (i 2))
+    ([LetRec ("fib", "n", iff (leq ($"n") (i 2))
                              (i 1)
                              (add (apply ("fib") (sub ($"n") (i 1)))
                                   (apply ("fib") (sub ($"n") (i 2)))))
@@ -146,7 +147,8 @@ end
 
 fun main (prog_name : string, args : string list) : OS.Process.status =
   let
-      val () = compile ex1
+      val () = compile ex1 "ex1.bc"
+      val () = compile ex2 "ex2.bc"
   in
       OS.Process.success
   end

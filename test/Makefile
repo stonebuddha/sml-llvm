@@ -16,4 +16,4 @@ test: test.mlb $(FILES)
 	mlton -link-opt "-lstdc++ -L.. -lllvm64 `llvm-config --ldflags --system-libs --libs all`" test.mlb
 
 clean:
-	rm -rf .cm test test-image* *.so
+	rm -rf .cm test test-image* *.so *.bc
