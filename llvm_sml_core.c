@@ -36,7 +36,7 @@ LLVMContextRef llvm_global_context(void) {
   return LLVMGetGlobalContext();
 }
 
-/* llcontext * string -> llmdkind */
+/* llcontext * string -> int */
 unsigned llvm_mdkind_id(LLVMContextRef C, const char *Name) {
   unsigned MDKindID = LLVMGetMDKindIDInContext(C, Name, strlen(Name));
   return MDKindID;
@@ -561,7 +561,7 @@ LLVMBool llvm_has_metadata(LLVMValueRef Val) {
   return LLVMHasMetadata(Val);
 }
 
-/* llvalue * llmdkind -> llvalue option */
+/* llvalue * int -> llvalue option */
 LLVMValueRef llvm_metadata(LLVMValueRef Val, unsigned MDKindId) {
   LLVMValueRef MD;
   if ((MD = LLVMGetMetadata(Val, MDKindId))) {
@@ -571,12 +571,12 @@ LLVMValueRef llvm_metadata(LLVMValueRef Val, unsigned MDKindId) {
   }
 }
 
-/* llvalue * llmdkind * llvalue -> unit */
+/* llvalue * int * llvalue -> unit */
 void llvm_set_metadata(LLVMValueRef Val, unsigned MDKindID, LLVMValueRef MD) {
   LLVMSetMetadata(Val, MDKindID, MD);
 }
 
-/* llvalue * llmdkind -> unit */
+/* llvalue * int -> unit */
 void llvm_clear_metadata(LLVMValueRef Val, unsigned MDKindID) {
   LLVMSetMetadata(Val, MDKindID, NULL);
 }

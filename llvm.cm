@@ -1,11 +1,17 @@
 Library
-  signature LLVM
-  structure Llvm
+  signature LLVM_CORE
+  structure LlvmCore
+
+  signature LLVM_BITWRITER
+  structure LlvmBitwriter
 is
   $/basis.cm
   $/smlnj-lib.cm
   $c/c.cm
   FFI32/llvm.cm
 
-  llvm_sml.sig
-  llvm_sml.sml
+  llvm_core.sig
+  llvm_core.sml
+
+  llvm_bitwriter.sig
+  llvm_bitwriter.sml

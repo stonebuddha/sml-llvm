@@ -4,4 +4,5 @@ FFI32
 FFI64
 
 *.so
-*.dSYM
+*.o
+*.a

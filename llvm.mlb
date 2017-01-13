@@ -4,9 +4,15 @@ local
   $(SML_LIB)/mlnlffi-lib/mlnlffi-lib.mlb
   FFI64/llvm.mlb
 
-  llvm_sml.sig
-  llvm_sml.sml
+  llvm_core.sig
+  llvm_core.sml
+
+  llvm_bitwriter.sig
+  llvm_bitwriter.sml
 in
-  signature LLVM
-  structure Llvm
+  signature LLVM_CORE
+  structure LlvmCore
+
+  signature LLVM_BITWRITER
+  structure LlvmBitwriter
 end

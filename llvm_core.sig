@@ -1,4 +1,4 @@
-signature LLVM =
+signature LLVM_CORE =
 sig
 
 (** Core API.
@@ -13,37 +13,34 @@ sig
 
 (** The top-level container for all LLVM global data. See the
     [llvm::LLVMContext] class. *)
-eqtype llcontext
+type llcontext
 
 (** The top-level container for all other LLVM Intermediate Representation (IR)
     objects. See the [llvm::Module] class. *)
-eqtype llmodule
+type llmodule
 
 (** Each value in the LLVM IR has a type, an instance of [lltype]. See the
     [llvm::Type] class. *)
-eqtype lltype
+type lltype
 
 (** Any value in the LLVM IR. Functions, instructions, global variables,
     constants, and much more are all [llvalues]. See the [llvm::Value] class.
     This type covers a wide range of subclasses. *)
-eqtype llvalue
+type llvalue
 
 (** Used to store users and usees of values. See the [llvm::Use] class. *)
-eqtype lluse
+type lluse
 
 (** A basic block in LLVM IR. See the [llvm::BasicBlock] class. *)
-eqtype llbasicblock
+type llbasicblock
 
 (** Used to generate instructions in the LLVM IR. See the [llvm::LLVMBuilder]
     class. *)
-eqtype llbuilder
+type llbuilder
 
 (** Used to efficiently handle large buffers of read-only binary data.
     See the [llvm::MemoryBuffer] class. *)
-eqtype llmemorybuffer
-
-(** The kind id of metadata attached to an instruction. *)
-eqtype llmdkind
+type llmemorybuffer
 
 (** The kind of an [lltype], the result of [classify_type ty]. See the
     [llvm::Type::TypeID] enumeration. *)
@@ -405,7 +402,7 @@ val global_context : unit -> llcontext
 (** [mdkind_id context name] returns the MDKind ID that corresponds to the
     name [name] in the context [context].  See the function
     [llvm::LLVMContext::getMDKindID]. *)
-val mdkind_id : llcontext -> string -> llmdkind
+val mdkind_id : llcontext -> string -> int
 
 
 (** {6 Modules} *)
@@ -788,15 +785,15 @@ val has_metadata : llvalue -> bool
 (** [metadata i kind] optionally returns the metadata associated with the
     kind [kind] in the instruction [i] See the function
     [llvm::Instruction::getMetadata]. *)
-val metadata : llvalue -> llmdkind -> llvalue option
+val metadata : llvalue -> int -> llvalue option
 
 (** [set_metadata i kind md] sets the metadata [md] of kind [kind] in the
     instruction [i]. See the function [llvm::Instruction::setMetadata]. *)
-val set_metadata : llvalue -> llmdkind -> llvalue -> unit
+val set_metadata : llvalue -> int -> llvalue -> unit
 
 (** [clear_metadata i kind] clears the metadata of kind [kind] in the
     instruction [i]. See the function [llvm::Instruction::setMetadata]. *)
-val clear_metadata : llvalue -> llmdkind -> unit
+val clear_metadata : llvalue -> int -> unit
 
 
 (** {7 Operations on metadata} *)
@@ -2542,7 +2539,7 @@ structure PassManager :
               (**  *)
               type Module
               type Function
-              eqtype 'a t
+              type 'a t
 
               (** [PassManager.create ()] constructs a new whole-module pass pipeline. This
                   type of pipeline is suitable for link-time optimization and whole-module
@@ -2586,30 +2583,5 @@ structure PassManager :
                   See the destructor of [llvm::BasePassManager]. *)
               val dispose : 'a t -> unit
           end
-
-
-(** Bitcode writer.
-
-    This interface provides an OCaml API for the LLVM bitcode writer, the
-    classes in the Bitwriter library. *)
-
-
-(** [write_bitcode_file m path] writes the bitcode for module [m] to the file at
-    [path]. Returns [true] if successful, [false] otherwise. *)
-val write_bitcode_file : llmodule -> string -> bool
-
-(** [write_bitcode_to_fd ~unbuffered fd m] writes the bitcode for module
-    [m] to the channel [c]. If [unbuffered] is [true], after every write the fd
-    will be flushed. Returns [true] if successful, [false] otherwise. *)
-(* val write_bitcode_to_fd : bool option -> LlvmCore.llmodule -> Unix.file_descr -> bool *)
-
-(** [write_bitcode_to_memory_buffer m] returns a memory buffer containing
-    the bitcode for module [m]. *)
-val write_bitcode_to_memory_buffer : llmodule -> llmemorybuffer
-
-(** [output_bitcode ~unbuffered c m] writes the bitcode for module [m]
-    to the channel [c]. If [unbuffered] is [true], after every write the fd
-    will be flushed. Returns [true] if successful, [false] otherwise. *)
-(* val output_bitcode : bool option -> out_channel -> Llvm.llmodule -> bool *)
 
 end

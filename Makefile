@@ -10,10 +10,10 @@ stub64: FFI64/llvm.mlb
 
 shared32: libllvm32.so
 
-shared64: libllvm64.so
+shared64: libllvm64.a
 
 clean:
-	rm -rf .cm FFI32 FFI64 *.so *.dSYM
+	rm -rf .cm FFI32 FFI64 *.so *.o *.a
 
 FFI32/llvm.cm: llvm_sml_core.h llvm_sml_bitwriter.h
 	rm -rf FFI32
@@ -31,14 +31,17 @@ fun libh s =\n\
   end\n\
 end\n\
 end" > FFI32/stub.sml
-	ml-nlffigen -include stub.sml -libhandle Stub.libh -dir FFI32 -cmfile llvm.cm $^
+	ml-nlffigen -light -include stub.sml -libhandle Stub.libh -dir FFI32 -cmfile llvm.cm $^
 
 FFI64/llvm.mlb: llvm_sml_core.h llvm_sml_bitwriter.h
 	rm -rf FFI64
-	mlnlffigen -linkage shared -dir FFI64 -mlbfile llvm.mlb $^
+	mlnlffigen -light -linkage shared -dir FFI64 -mlbfile llvm.mlb $^
 
 libllvm32.so: llvm_sml_core.c llvm_sml_bitwriter.c
-	gcc -m32 -dynamiclib -lstdc++ `$(LLVMBIN32)/llvm-config --cflags --ldflags --system-libs --libs all` -o $@ $^
+	gcc -m32 -shared -lstdc++ `$(LLVMBIN32)/llvm-config --cflags --ldflags --system-libs --libs all` -o $@ $^
 
-libllvm64.so: llvm_sml_core.c llvm_sml_bitwriter.c
-	gcc -shared -lstdc++ `$(LLVMBIN64)/llvm-config --cflags --ldflags --system-libs --libs all` -o $@ $^
+%.o: %.c
+	gcc -c `$(LLVMBIN64)/llvm-config --cflags` -o $@ $^
+
+libllvm64.a: llvm_sml_core.o llvm_sml_bitwriter.o
+	ar cr $@ $^

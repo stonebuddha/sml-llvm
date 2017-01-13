@@ -16,7 +16,7 @@ datatype expr =
 datatype defn =
          LetRec of string * string * expr
 
-structure L = Llvm
+structure L = LlvmCore
 
 fun ty c = L.i32_type c
 
