@@ -12,6 +12,9 @@ local
 
   llvm_target.sig
   llvm_target.sml
+
+  llvm_executionengine.sig
+  llvm_executionengine.sml
 in
   signature LLVM_CORE
   structure LlvmCore
@@ -21,4 +24,7 @@ in
 
   signature LLVM_TARGET
   structure LlvmTarget
+
+  signature LLVM_EXECUTIONENGINE
+  structure LlvmExecutionengine
 end

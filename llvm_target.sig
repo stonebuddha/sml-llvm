@@ -40,6 +40,8 @@ structure CodeModel :
                        | Kernel
                        | Medium
                        | Large
+
+              val toInt : t -> int
           end
 
 structure CodeGenFileType :

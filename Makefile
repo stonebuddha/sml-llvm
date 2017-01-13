@@ -18,7 +18,8 @@ clean:
 HEADERS = \
 llvm_sml_core.h \
 llvm_sml_bitwriter.h \
-llvm_sml_target.h
+llvm_sml_target.h \
+llvm_sml_executionengine.h
 
 FFI32/llvm.cm: $(HEADERS)
 	rm -rf FFI32
@@ -42,11 +43,11 @@ FFI64/llvm.mlb: $(HEADERS)
 	rm -rf FFI64
 	mlnlffigen -light -linkage shared -dir FFI64 -mlbfile llvm.mlb $^
 
-libllvm32.so: llvm_sml_core.c llvm_sml_bitwriter.c llvm_sml_target.c
+libllvm32.so: llvm_sml_core.c llvm_sml_bitwriter.c llvm_sml_target.c llvm_sml_executionengine.c
 	gcc -m32 -shared -lstdc++ `$(LLVMBIN32)/llvm-config --cflags --ldflags --system-libs --libs all` -o $@ $^
 
 %.o: %.c
 	gcc -c `$(LLVMBIN64)/llvm-config --cflags` -o $@ $^
 
-libllvm64.a: llvm_sml_core.o llvm_sml_bitwriter.o llvm_sml_target.o
+libllvm64.a: llvm_sml_core.o llvm_sml_bitwriter.o llvm_sml_target.o llvm_sml_executionengine.o
 	ar cr $@ $^

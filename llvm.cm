@@ -7,6 +7,9 @@ Library
 
   signature LLVM_TARGET
   structure LlvmTarget
+
+  signature LLVM_EXECUTIONENGINE
+  structure LlvmExecutionengine
 is
   $/basis.cm
   $/smlnj-lib.cm
@@ -21,3 +24,6 @@ is
 
   llvm_target.sig
   llvm_target.sml
+
+  llvm_executionengine.sig
+  llvm_executionengine.sml
