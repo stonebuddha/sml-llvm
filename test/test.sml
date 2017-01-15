@@ -17,6 +17,7 @@ datatype defn =
          LetRec of string * string * expr
 
 structure L = LlvmCore
+structure EE = LlvmExecutionengine
 
 fun ty c = L.i32_type c
 
@@ -124,6 +125,15 @@ fun compile prog filename =
       else (L.dispose_module m; L.dispose_context c)
   end
 
+fun run prog =
+  let
+      val (m, c, main) = mk_module prog
+      val ee = EE.create NONE m
+      val _ = EE.run_function ee main 0 (Array.fromList [])
+  in
+      ()
+  end
+
 local
     fun add a b = BinOp (Add, a, b)
     fun sub a b = BinOp (Sub, a, b)
@@ -147,8 +157,9 @@ end
 
 fun main (prog_name : string, args : string list) : OS.Process.status =
   let
-      val () = compile ex1 "ex1.bc"
-      val () = compile ex2 "ex2.bc"
+      val _ = EE.initialize ()
+      val () = run ex1
+      val () = run ex2
   in
       OS.Process.success
   end

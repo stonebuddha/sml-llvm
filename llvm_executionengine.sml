@@ -4,6 +4,20 @@ struct
 infixr 0 $
 fun f $ x = f x
 
+fun dupPtrArr (arr : ('a C.ptr') array) : ('a C.ptr, C.rw) C.obj C.ptr' =
+  let
+      val buf = C.alloc' C.S.ptr (Word.fromInt $ Array.length arr)
+      fun iter (i, ptr) =
+        let
+            val loc = C.Ptr.|+! C.S.ptr (buf, i)
+        in
+            C.Set.ptr' (C.Ptr.|*! loc, ptr)
+        end
+      val () = Array.appi iter arr
+  in
+      buf
+  end
+
 structure Core = LlvmCoreInt
 structure Target = LlvmTargetInt
 
@@ -15,6 +29,7 @@ val initialize : unit -> bool =
       | _ => raise (Fail "initialize")
 
 type llexecutionengine = (ST_LLVMOpaqueExecutionEngine.tag, C.rw) C.su_obj C.ptr'
+type llgenericvalue = (ST_LLVMOpaqueGenericValue.tag, C.rw) C.su_obj C.ptr'
 
 type llcompileroptions = {
     opt_level : int,
@@ -80,6 +95,45 @@ fun get_function_address (Name : string) (Typ : 'a C.fptr C.T.typ) (EE : llexecu
   in
       C.Get.fptr $ C.Ptr.|*| $ C.Ptr.cast (C.T.pointer Typ) Res
   end
+(* FIXME: this can not compile under SML/NJ *)
+(* val create_generic_value_of_int : Core.lltype -> Int64.int -> bool -> llgenericvalue = *)
+(*  fn Ty => fn N => fn IsSigned => F_llvm_create_generic_value_of_int.f' (Ty, Word64.fromLargeInt $ Int64.toLarge N, if IsSigned then 1 else 0) *)
+val create_generic_value_of_pointer : C.voidptr -> llgenericvalue =
+ fn P => F_llvm_create_generic_value_of_pointer.f' P
+val create_generic_value_of_float : Core.lltype -> real -> llgenericvalue =
+ fn Ty => fn N => F_llvm_create_generic_value_of_float.f' (Ty, N)
+val generic_value_int_width : llgenericvalue -> int =
+ fn GenVal => Word32.toInt $ F_llvm_generic_value_int_width.f' GenVal
+(* FIXME: this can not compile under SML/NJ *)
+(* val generic_value_to_int : llgenericvalue -> bool -> Int64.int = *)
+(*  fn GenVal => fn IsSigned => Int64.fromLarge $ Word64.toLargeInt $ F_llvm_generic_value_to_int.f' (GenVal, if IsSigned then 1 else 0) *)
+val generic_value_to_pointer : llgenericvalue -> C.voidptr =
+ fn GenVal => F_llvm_generic_value_to_pointer.f' GenVal
+val generic_value_to_float : Core.lltype -> llgenericvalue -> real =
+ fn Ty => fn GenVal => F_llvm_generic_value_to_float.f' (Ty, GenVal)
+val dispose_generic_value : llgenericvalue -> unit =
+ fn GenVal => F_llvm_dispose_generic_value.f' GenVal
+val run_function_as_main : llexecutionengine -> Core.llvalue -> int -> string list -> string list -> int =
+ fn EE => fn F => fn ArgC => fn ArgV => fn EnvP =>
+    let
+        val ArgVC = Array.fromList $ List.map ZString.dupML' ArgV
+        val ArgV' = dupPtrArr ArgVC
+        val EnvPC = Array.fromList $ List.map ZString.dupML' EnvP
+        val EnvP' = dupPtrArr EnvPC
+    in
+        (Int32.toInt $ F_llvm_run_function_as_main.f' (EE, F, Word32.fromInt ArgC, C.Ptr.ro' ArgV', C.Ptr.ro' EnvP'))
+        before
+        (Array.app C.free' ArgVC; Array.app C.free' EnvPC; C.free' ArgV'; C.free' EnvP')
+    end
+val run_function : llexecutionengine -> Core.llvalue -> int -> llgenericvalue array -> llgenericvalue =
+ fn EE => fn F => fn ArgCount => fn Args =>
+    let
+        val Args' = dupPtrArr Args
+    in
+        F_llvm_run_function.f' (EE, F, Word32.fromInt ArgCount, Args')
+        before
+        C.free' Args'
+    end
 
 end
 

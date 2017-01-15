@@ -1044,7 +1044,7 @@ fun add_named_metadata_operand (M : llmodule) (Name : string) (Val : llvalue) : 
 
 (*--... Operations on scalar constants .....................................--*)
 fun const_int (IntTy : lltype) (N : int) : llvalue = F_llvm_const_int.f' (IntTy, Int32.fromInt N)
-(* FIXME: this can not compile under SML/ND *)
+(* FIXME: this can not compile under SML/NJ *)
 (* fun const_of_int64 (IntTy : lltype) (N : Int64.int) (SExt : bool) : llvalue = F_llvm_const_of_int64.f' (IntTy, N, if SExt then 1 else 0) *)
 fun int64_of_const (Val : llvalue) : Int64.int option =
   let

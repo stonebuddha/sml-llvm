@@ -17,6 +17,8 @@ val initialize : unit -> bool
     invoking a static compiler and generating a native executable. *)
 type llexecutionengine
 
+type llgenericvalue
+
 (** MCJIT compiler options. See [llvm::TargetOptions]. *)
 type llcompileroptions = {
   opt_level : int,
@@ -83,5 +85,25 @@ val get_global_value_address : string -> 'a C.ptr C.T.typ -> llexecutionengine -
     generation, all loaded modules.  Further modifications to the
     modules will not have any effect. *)
 val get_function_address : string -> 'a C.fptr C.T.typ -> llexecutionengine -> 'a C.fptr
+
+(* val create_generic_value_of_int : LlvmCore.lltype -> Int64.int -> bool -> llgenericvalue *)
+
+val create_generic_value_of_pointer : C.voidptr -> llgenericvalue
+
+val create_generic_value_of_float : LlvmCore.lltype -> real -> llgenericvalue
+
+val generic_value_int_width : llgenericvalue -> int
+
+(* val generic_value_to_int : llgenericvalue -> bool -> Int64.int *)
+
+val generic_value_to_pointer : llgenericvalue -> C.voidptr
+
+val generic_value_to_float : LlvmCore.lltype -> llgenericvalue -> real
+
+val dispose_generic_value : llgenericvalue -> unit
+
+val run_function_as_main : llexecutionengine -> LlvmCore.llvalue -> int -> string list -> string list -> int
+
+val run_function : llexecutionengine -> LlvmCore.llvalue -> int -> llgenericvalue array -> llgenericvalue
 
 end

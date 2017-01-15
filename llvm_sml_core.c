@@ -2317,7 +2317,7 @@ LLVMPassManagerRef llvm_passmanager_create(void) {
 
 /* llmodule -> PassManager.Function PassManager.t */
 LLVMPassManagerRef llvm_passmanager_create_function(LLVMModuleRef M) {
-  return LLVMCreateFunctionPassManager((LLVMModuleProviderRef) M);
+  return LLVMCreateFunctionPassManagerForModule(M);
 }
 
 /* llmodule * PassManager.Function PassManager.t -> bool */

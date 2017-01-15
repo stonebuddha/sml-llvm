@@ -97,3 +97,53 @@ void *llvm_ee_get_global_value_address(const char *Name, LLVMExecutionEngineRef 
 void *llvm_ee_get_function_address(const char *Name, LLVMExecutionEngineRef EE) {
   return (void *) LLVMGetFunctionAddress(EE, Name);
 }
+
+/* lltype * Int64.int * bool -> llgenericvalue */
+LLVMGenericValueRef llvm_create_generic_value_of_int(LLVMTypeRef Ty, unsigned long long N, LLVMBool IsSigned) {
+  return LLVMCreateGenericValueOfInt(Ty, N, IsSigned);
+}
+
+/* C.voidptr -> llgenericvalue */
+LLVMGenericValueRef llvm_create_generic_value_of_pointer(void *P) {
+  return LLVMCreateGenericValueOfPointer(P);
+}
+
+/* lltype * real -> llgenericvalue */
+LLVMGenericValueRef llvm_create_generic_value_of_float(LLVMTypeRef Ty, double N) {
+  return LLVMCreateGenericValueOfFloat(Ty, N);
+}
+
+/* llgenericvalue -> int */
+unsigned llvm_generic_value_int_width(LLVMGenericValueRef GenValRef) {
+  return LLVMGenericValueIntWidth(GenValRef);
+}
+
+/* llgenericvalue * bool -> Int64.int */
+unsigned long long llvm_generic_value_to_int(LLVMGenericValueRef GenVal, LLVMBool IsSigned) {
+  return LLVMGenericValueToInt(GenVal, IsSigned);
+}
+
+/* llgenericvalue -> voidptr */
+void *llvm_generic_value_to_pointer(LLVMGenericValueRef GenVal) {
+  return LLVMGenericValueToPointer(GenVal);
+}
+
+/* lltype * llgenericvalue -> real */
+double llvm_generic_value_to_float(LLVMTypeRef TyRef, LLVMGenericValueRef GenVal) {
+  return LLVMGenericValueToFloat(TyRef, GenVal);
+}
+
+/* llgenericvalue -> void */
+void llvm_dispose_generic_value(LLVMGenericValueRef GenVal) {
+  LLVMDisposeGenericValue(GenVal);
+}
+
+/* llexecutionengine * llvalue * int * string array * string array -> int */
+int llvm_run_function_as_main(LLVMExecutionEngineRef EE, LLVMValueRef F, unsigned ArgC, const char * const *ArgV, const char * const *EnvP) {
+  return LLVMRunFunctionAsMain(EE, F, ArgC, ArgV, EnvP);
+}
+
+/* llexecutionengine * llvalue * int * llgenericvalue array -> llgenericvalue */
+LLVMGenericValueRef llvm_run_function(LLVMExecutionEngineRef EE, LLVMValueRef F, unsigned ArgCount, LLVMGenericValueRef *Args) {
+  return LLVMRunFunction(EE, F, ArgCount, Args);
+}

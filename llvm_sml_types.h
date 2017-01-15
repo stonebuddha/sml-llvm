@@ -10,9 +10,7 @@ typedef struct LLVMOpaqueType *LLVMTypeRef;
 typedef struct LLVMOpaqueValue *LLVMValueRef;
 typedef struct LLVMOpaqueBasicBlock *LLVMBasicBlockRef;
 typedef struct LLVMOpaqueBuilder *LLVMBuilderRef;
-typedef struct LLVMOpaqueModuleProvider *LLVMModuleProviderRef;
 typedef struct LLVMOpaquePassManager *LLVMPassManagerRef;
-typedef struct LLVMOpaquePassRegistry *LLVMPassRegistryRef;
 typedef struct LLVMOpaqueUse *LLVMUseRef;
 
 #endif
