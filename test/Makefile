@@ -12,7 +12,7 @@ smlnj:
 
 mlton: test
 
-test: test.mlb $(FILES)
+test: test.mlb $(FILES) ../libllvm64.a
 	mlton -link-opt "-lstdc++ -L.. -lllvm64 `llvm-config --ldflags --system-libs --libs all`" test.mlb
 
 clean:

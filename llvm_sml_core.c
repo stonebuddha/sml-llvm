@@ -674,10 +674,9 @@ LLVMValueRef llvm_const_float(LLVMTypeRef RealTy, double N) {
 /* llvalue -> real option */
 double *llvm_float_of_const(LLVMValueRef Val) {
   LLVMBool LosesInfo;
-  double Result;
 
   if (LLVMIsAConstantFP(Val)) {
-    Result = LLVMConstRealGetDouble(Val, &LosesInfo);
+    double Result = LLVMConstRealGetDouble(Val, &LosesInfo);
     if (LosesInfo) {
       return NULL;
     } else {
@@ -734,13 +733,10 @@ LLVMValueRef llvm_const_vector(LLVMValueRef *ElemVals, unsigned ElemCount) {
 
 /* llvalue -> string option */
 const char *llvm_string_of_const(LLVMValueRef Val) {
-  const char *S;
-  size_t Len;
-  char *Str;
-
   if (LLVMIsAConstantDataSequential(Val) && LLVMIsConstantString(Val)) {
-    S = LLVMGetAsString(Val, &Len);
-    Str = (char *) malloc(sizeof(char) * (Len + 1));
+    size_t Len;
+    const char *S = LLVMGetAsString(Val, &Len);
+    char *Str = (char *) malloc(sizeof(char) * (Len + 1));
     memcpy(Str, S, Len);
     Str[Len] = '\0';
 
@@ -1385,10 +1381,9 @@ void llvm_set_function_call_conv(unsigned Id, LLVMValueRef Fn) {
 /* llvalue -> string option */
 const char *llvm_gc(LLVMValueRef Fn) {
   const char *GC;
-  const char *Name;
 
   if ((GC = LLVMGetGC(Fn))) {
-    Name = copy_string(GC);
+    const char *Name = copy_string(GC);
     return Name;
   } else {
     return NULL;
