@@ -95,7 +95,7 @@ const char *llvm_string_of_llmodule(LLVMModuleRef M) {
   char *ModuleCStr;
 
   ModuleCStr = LLVMPrintModuleToString(M);
-  ModuleStr = copy_string(ModuleStr);
+  ModuleStr = copy_string(ModuleCStr);
   LLVMDisposeMessage(ModuleCStr);
 
   return ModuleStr;

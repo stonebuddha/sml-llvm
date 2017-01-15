@@ -85,6 +85,7 @@ datatype t =
          | Vector
          | Metadata
          | X86_mmx
+         | Token
 
 fun fromInt 0 = Void
   | fromInt 1 = Half
@@ -102,6 +103,7 @@ fun fromInt 0 = Void
   | fromInt 13 = Vector
   | fromInt 14 = Metadata
   | fromInt 15 = X86_mmx
+  | fromInt 16 = Token
   | fromInt _ = raise (Fail "TypeKind.fromInt")
 end
 
@@ -203,6 +205,8 @@ struct
 val c = 0
 val fast = 8
 val cold = 9
+val web_kit_js = 12
+val any_reg = 13
 val x86_stdcall = 64
 val x86_fastcall = 65
 end
@@ -401,6 +405,12 @@ datatype t =
          | AtomicRMW
          | Resume
          | LandingPad
+         | AddrSpaceCast
+         | CleanupRet
+         | CatchRet
+         | CatchPad
+         | CleanupPad
+         | CatchSwitch
 
 fun fromInt 0 = Invalid
   | fromInt 1 = Ret
@@ -462,6 +472,12 @@ fun fromInt 0 = Invalid
   | fromInt 57 = AtomicRMW
   | fromInt 58 = Resume
   | fromInt 59 = LandingPad
+  | fromInt 60 = AddrSpaceCast
+  | fromInt 61 = CleanupRet
+  | fromInt 62 = CatchRet
+  | fromInt 63 = CatchPad
+  | fromInt 64 = CleanupPad
+  | fromInt 65 = CatchSwitch
   | fromInt _ = raise (Fail "Opcode.fromInt")
 end
 

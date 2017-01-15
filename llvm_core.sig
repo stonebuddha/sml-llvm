@@ -63,6 +63,7 @@ structure TypeKind :
                        | Vector
                        | Metadata
                        | X86_mmx
+                       | Token
           end
 
 (** The linkage of a global value, accessed with {!linkage} and
@@ -120,6 +121,8 @@ structure CallConv :
                                           internal linkage. *)
               val cold : int          (** [cold] is the calling convention for
                                           callee-save. *)
+              val web_kit_js : int
+              val any_reg : int
               val x86_stdcall : int   (** [x86_stdcall] is the familiar stdcall calling
                                           convention from C. *)
               val x86_fastcall : int  (** [x86_fastcall] is the familiar fastcall calling
@@ -271,6 +274,13 @@ structure Opcode :
                        | AtomicRMW
                        | Resume
                        | LandingPad
+
+                       | AddrSpaceCast
+                       | CleanupRet
+                       | CatchRet
+                       | CatchPad
+                       | CleanupPad
+                       | CatchSwitch
           end
 
 (** The type of a clause of a [landingpad] instruction.
