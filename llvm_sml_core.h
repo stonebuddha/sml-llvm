@@ -1,7 +1,17 @@
 #ifndef LLVM_SML_CORE_H
 #define LLVM_SML_CORE_H
 
-#include "llvm_sml_types.h"
+typedef int LLVMBool;
+
+typedef struct LLVMOpaqueMemoryBuffer *LLVMMemoryBufferRef;
+typedef struct LLVMOpaqueContext *LLVMContextRef;
+typedef struct LLVMOpaqueModule *LLVMModuleRef;
+typedef struct LLVMOpaqueType *LLVMTypeRef;
+typedef struct LLVMOpaqueValue *LLVMValueRef;
+typedef struct LLVMOpaqueBasicBlock *LLVMBasicBlockRef;
+typedef struct LLVMOpaqueBuilder *LLVMBuilderRef;
+typedef struct LLVMOpaquePassManager *LLVMPassManagerRef;
+typedef struct LLVMOpaqueUse *LLVMUseRef;
 
 LLVMContextRef llvm_create_context(void);
 void llvm_dispose_context(LLVMContextRef);

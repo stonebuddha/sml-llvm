@@ -6,6 +6,21 @@ sig
     This interface provides an OCaml API for LLVM target information,
     the classes in the Target library. *)
 
+type llmodule
+
+type lltype
+
+type llmemorybuffer
+
+type llcontext
+
+type llvalue
+
+structure PassManager :
+          sig
+              type 'a t
+          end
+
 structure Endian :
           sig
               datatype t =
@@ -55,7 +70,7 @@ structure CodeGenFileType :
 
 structure DataLayout :
           sig
-              type t = (ST_LLVMOpaqueTargetData.tag, C.rw) C.su_obj C.ptr'
+              type t
 
               (** [of_string rep] parses the data layout string representation [rep].
                   See the constructor [llvm::DataLayout::DataLayout]. *)
@@ -76,7 +91,7 @@ structure DataLayout :
 
               (** Returns the integer type that is the same size as a pointer on a target.
                   See the method [llvm::DataLayout::getIntPtrType]. *)
-              val intptr_type : LlvmCore.llcontext -> t -> LlvmCore.lltype
+              val intptr_type : llcontext -> t -> lltype
 
               (** Returns the pointer size in bytes for a target in a given address space.
                   See the method [llvm::DataLayout::getPointerSize]. *)
@@ -85,55 +100,55 @@ structure DataLayout :
               (** Returns the integer type that is the same size as a pointer on a target
                   in a given address space.
                   See the method [llvm::DataLayout::getIntPtrType]. *)
-              val qualified_intptr_type : LlvmCore.llcontext -> int -> t -> LlvmCore.lltype
+              val qualified_intptr_type : llcontext -> int -> t -> lltype
 
               (** Computes the size of a type in bits for a target.
                   See the method [llvm::DataLayout::getTypeSizeInBits]. *)
               (* FIXME: this can not compile under SML/NJ *)
-              (* val size_in_bits : LlvmCore.lltype -> t -> Int64.int *)
+              (* val size_in_bits : lltype -> t -> Int64.int *)
 
               (** Computes the storage size of a type in bytes for a target.
                   See the method [llvm::DataLayout::getTypeStoreSize]. *)
               (* FIXME: this can not compile under SML/NJ *)
-              (* val store_size : LlvmCore.lltype -> t -> Int64.int *)
+              (* val store_size : lltype -> t -> Int64.int *)
 
               (** Computes the ABI size of a type in bytes for a target.
                   See the method [llvm::DataLayout::getTypeAllocSize]. *)
               (* FIXME: this can not compile under SML/NJ *)
-              (* val abi_size : LlvmCore.lltype -> t -> Int64.int *)
+              (* val abi_size : lltype -> t -> Int64.int *)
 
               (** Computes the ABI alignment of a type in bytes for a target.
                   See the method [llvm::DataLayout::getTypeABISize]. *)
-              val abi_align : LlvmCore.lltype -> t -> int
+              val abi_align : lltype -> t -> int
 
               (** Computes the call frame alignment of a type in bytes for a target.
                   See the method [llvm::DataLayout::getTypeABISize]. *)
-              val stack_align : LlvmCore.lltype -> t -> int
+              val stack_align : lltype -> t -> int
 
               (** Computes the preferred alignment of a type in bytes for a target.
                   See the method [llvm::DataLayout::getTypeABISize]. *)
-              val preferred_align : LlvmCore.lltype -> t -> int
+              val preferred_align : lltype -> t -> int
 
               (** Computes the preferred alignment of a global variable in bytes for
                   a target. See the method [llvm::DataLayout::getPreferredAlignment]. *)
-              val preferred_align_of_global : LlvmCore.llvalue -> t -> int
+              val preferred_align_of_global : llvalue -> t -> int
 
               (** Computes the structure element that contains the byte offset for a target.
                   See the method [llvm::StructLayout::getElementContainingOffset]. *)
               (* FIXME: this can not compile under SML/NJ *)
-              (* val element_at_offset : LlvmCore.lltype -> Int64.int -> t -> int *)
+              (* val element_at_offset : lltype -> Int64.int -> t -> int *)
 
               (** Computes the byte offset of the indexed struct element for a target.
                   See the method [llvm::StructLayout::getElementContainingOffset]. *)
               (* FIXME: this can not compile under SML/NJ *)
-              (* val offset_of_element : LlvmCore.lltype -> int -> t -> Int64.int *)
+              (* val offset_of_element : lltype -> int -> t -> Int64.int *)
           end
 
 (** {6 Target} *)
 
 structure Target :
           sig
-              type t = (ST_LLVMTarget.tag, C.rw) C.su_obj C.ptr'
+              type t
 
               (** [default_triple ()] returns the default target triple for current
                   platform. *)
@@ -180,7 +195,7 @@ structure Target :
 
 structure TargetMachine :
           sig
-              type t = (ST_LLVMOpaqueTargetMachine.tag, C.rw) C.su_obj C.ptr'
+              type t
 
               (** Creates a new target machine.
                   See [llvm::Target::createTargetMachine]. *)
@@ -206,7 +221,7 @@ structure TargetMachine :
 
               (** Adds the target-specific analysis passes to the pass manager.
                   See [llvm::TargetMachine::addAnalysisPasses]. *)
-              val add_analysis_passes : 'a LlvmCore.PassManager.t -> t -> unit
+              val add_analysis_passes : 'a PassManager.t -> t -> unit
 
               (** Sets the assembly verbosity of this target machine.
                   See [llvm::TargetMachine::setAsmVerbosity]. *)
@@ -214,11 +229,11 @@ structure TargetMachine :
 
               (** Emits assembly or object data for the given module to the given
                   file or raise [Error]. *)
-              val emit_to_file : LlvmCore.llmodule -> CodeGenFileType.t -> string -> t -> unit
+              val emit_to_file : llmodule -> CodeGenFileType.t -> string -> t -> unit
 
               (** Emits assembly or object data for the given module to a fresh memory
                   buffer or raise [Error]. *)
-              val emit_to_memory_buffer : LlvmCore.llmodule -> CodeGenFileType.t -> t -> LlvmCore.llmemorybuffer
+              val emit_to_memory_buffer : llmodule -> CodeGenFileType.t -> t -> llmemorybuffer
           end
 
 end

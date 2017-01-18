@@ -1,7 +1,6 @@
 #ifndef LLVM_SML_EXECUTIONENGINE_H
 #define LLVM_SML_EXECUTIONENGINE_H
 
-#include "llvm_sml_types.h"
 #include "llvm_sml_target.h"
 
 typedef struct LLVMOpaqueExecutionEngine *LLVMExecutionEngineRef;

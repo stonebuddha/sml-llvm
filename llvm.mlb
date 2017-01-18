@@ -15,16 +15,10 @@ local
 
   llvm_executionengine.sig
   llvm_executionengine.sml
+
+  llvm.sig
+  llvm.sml
 in
-  signature LLVM_CORE
-  structure LlvmCore
-
-  signature LLVM_BITWRITER
-  structure LlvmBitwriter
-
-  signature LLVM_TARGET
-  structure LlvmTarget
-
-  signature LLVM_EXECUTIONENGINE
-  structure LlvmExecutionengine
+  signature LLVM
+  structure Llvm
 end

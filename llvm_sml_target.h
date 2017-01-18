@@ -1,7 +1,7 @@
 #ifndef LLVM_SML_TARGET_H
 #define LLVM_SML_TARGET_H
 
-#include "llvm_sml_types.h"
+#include "llvm_sml_core.h"
 
 typedef struct LLVMOpaqueTargetData *LLVMTargetDataRef;
 typedef struct LLVMTarget *LLVMTargetRef;

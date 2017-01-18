@@ -1,10 +1,10 @@
-structure LlvmTarget :> LLVM_TARGET =
+structure LlvmTarget =
 struct
 
 infixr 0 $
 fun f $ x = f x
 
-structure Core = LlvmCore
+open LlvmCore
 
 structure Endian =
 struct
@@ -97,23 +97,23 @@ val as_string : t -> string =
     end
 val byte_order : t -> Endian.t = fn DL => Endian.fromInt $ Int32.toInt $ F_llvm_datalayout_byte_order.f' DL
 val pointer_size : t -> int = fn DL => Word32.toInt $ F_llvm_datalayout_pointer_size.f' DL
-val intptr_type : Core.llcontext -> t -> Core.lltype = fn C => fn DL => F_llvm_datalayout_intptr_type.f' (C, DL)
+val intptr_type : llcontext -> t -> lltype = fn C => fn DL => F_llvm_datalayout_intptr_type.f' (C, DL)
 val qualified_pointer_size : int -> t -> int = fn AS => fn DL => Word32.toInt $ F_llvm_datalayout_qualified_pointer_size.f' (Word32.fromInt AS, DL)
-val qualified_intptr_type : Core.llcontext -> int -> t -> Core.lltype = fn C => fn AS => fn DL => F_llvm_datalayout_qualified_intptr_type.f' (C, Word32.fromInt AS, DL)
+val qualified_intptr_type : llcontext -> int -> t -> lltype = fn C => fn AS => fn DL => F_llvm_datalayout_qualified_intptr_type.f' (C, Word32.fromInt AS, DL)
 (* FIXME: this can not compile under SML/NJ *)
-(* val size_in_bits : Core.lltype -> t -> Int64.int = fn Ty => fn DL => Int64.fromLarge $ Word64.toLargeInt $ F_llvm_datalayout_size_in_bits.f' (Ty, DL) *)
+(* val size_in_bits : lltype -> t -> Int64.int = fn Ty => fn DL => Int64.fromLarge $ Word64.toLargeInt $ F_llvm_datalayout_size_in_bits.f' (Ty, DL) *)
 (* FIXME: this can not compile under SML/NJ *)
-(* val store_size : Core.lltype -> t -> Int64.int = fn Ty => fn DL => Int64.fromLarge $ Word64.toLargeInt $ F_llvm_datalayout_store_size.f' (Ty, DL) *)
+(* val store_size : lltype -> t -> Int64.int = fn Ty => fn DL => Int64.fromLarge $ Word64.toLargeInt $ F_llvm_datalayout_store_size.f' (Ty, DL) *)
 (* FIXME: this can not compile under SML/NJ *)
-(* val abi_size : Core.lltype -> t -> Int64.int = fn Ty => fn DL => Int64.fromLarge $ Word64.toLargeInt $ F_llvm_datalayout_abi_size.f' (Ty, DL) *)
-val abi_align : Core.lltype -> t -> int = fn Ty => fn DL => Word32.toInt $ F_llvm_datalayout_abi_align.f' (Ty, DL)
-val stack_align : Core.lltype -> t -> int = fn Ty => fn DL => Word32.toInt $ F_llvm_datalayout_stack_align.f' (Ty, DL)
-val preferred_align : Core.lltype -> t -> int = fn Ty => fn DL => Word32.toInt $ F_llvm_datalayout_preferred_align.f' (Ty, DL)
-val preferred_align_of_global : Core.llvalue -> t -> int = fn GlobalVar => fn DL => Word32.toInt $ F_llvm_datalayout_preferred_align_of_global.f' (GlobalVar, DL)
+(* val abi_size : lltype -> t -> Int64.int = fn Ty => fn DL => Int64.fromLarge $ Word64.toLargeInt $ F_llvm_datalayout_abi_size.f' (Ty, DL) *)
+val abi_align : lltype -> t -> int = fn Ty => fn DL => Word32.toInt $ F_llvm_datalayout_abi_align.f' (Ty, DL)
+val stack_align : lltype -> t -> int = fn Ty => fn DL => Word32.toInt $ F_llvm_datalayout_stack_align.f' (Ty, DL)
+val preferred_align : lltype -> t -> int = fn Ty => fn DL => Word32.toInt $ F_llvm_datalayout_preferred_align.f' (Ty, DL)
+val preferred_align_of_global : llvalue -> t -> int = fn GlobalVar => fn DL => Word32.toInt $ F_llvm_datalayout_preferred_align_of_global.f' (GlobalVar, DL)
 (* FIXME: this can not compile under SML/NJ *)
-(* val element_at_offset : Core.lltype -> Int64.int -> t -> int = fn Ty => fn Offset => fn DL => Word32.toInt $ F_llvm_datalayout_element_at_offset.f' (Ty, Word64.fromLargeInt $ Int64.toLarge Offset, DL) *)
+(* val element_at_offset : lltype -> Int64.int -> t -> int = fn Ty => fn Offset => fn DL => Word32.toInt $ F_llvm_datalayout_element_at_offset.f' (Ty, Word64.fromLargeInt $ Int64.toLarge Offset, DL) *)
 (* FIXME: this can not compile under SML/NJ *)
-(* val offset_of_element : Core.lltype -> int -> t -> Int64.int = fn Ty => fn Index => fn DL => Int64.fromLarge $ Word64.toLargeInt $ F_llvm_datalayout_offset_of_element.f' (Ty, Word32.fromInt Index, DL) *)
+(* val offset_of_element : lltype -> int -> t -> Int64.int = fn Ty => fn Index => fn DL => Int64.fromLarge $ Word64.toLargeInt $ F_llvm_datalayout_offset_of_element.f' (Ty, Word32.fromInt Index, DL) *)
 end
 
 structure Target =
@@ -261,9 +261,9 @@ val features : t -> string =
         C.free' Features
     end
 val data_layout : t -> DataLayout.t = fn Machine => F_llvm_targetmachine_data_layout.f' Machine
-val add_analysis_passes : 'a Core.PassManager.t -> t -> unit = fn PM => fn Machine => F_llvm_targetmachine_add_analysis_passes.f' (PM, Machine)
+val add_analysis_passes : 'a PassManager.t -> t -> unit = fn PM => fn Machine => F_llvm_targetmachine_add_analysis_passes.f' (PM, Machine)
 val set_verbose_asm : bool -> t -> unit = fn Verb => fn Machine => F_llvm_targetmachine_set_verbose_asm.f' (if Verb then 1 else 0, Machine)
-val emit_to_file : Core.llmodule -> CodeGenFileType.t -> string -> t -> unit =
+val emit_to_file : llmodule -> CodeGenFileType.t -> string -> t -> unit =
  fn Module => fn FileType => fn FileName => fn Machine =>
     let
         val FileName' = ZString.dupML' FileName
@@ -272,7 +272,7 @@ val emit_to_file : Core.llmodule -> CodeGenFileType.t -> string -> t -> unit =
         before
         C.free' FileName'
     end
-val emit_to_memory_buffer : Core.llmodule -> CodeGenFileType.t -> t -> Core.llmemorybuffer = fn Module => fn FileType => fn Machine => F_llvm_targetmachine_emit_to_memory_buffer.f' (Module, Int32.fromInt $ CodeGenFileType.toInt FileType, Machine)
+val emit_to_memory_buffer : llmodule -> CodeGenFileType.t -> t -> llmemorybuffer = fn Module => fn FileType => fn Machine => F_llvm_targetmachine_emit_to_memory_buffer.f' (Module, Int32.fromInt $ CodeGenFileType.toInt FileType, Machine)
 end
 
 end

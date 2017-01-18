@@ -1,4 +1,4 @@
-structure LlvmCore :> LLVM_CORE =
+structure LlvmCore =
 struct
 
 infixr 0 $

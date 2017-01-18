@@ -16,8 +16,8 @@ datatype expr =
 datatype defn =
          LetRec of string * string * expr
 
-structure L = LlvmCore
-structure EE = LlvmExecutionengine
+structure L = Llvm.Core
+structure EE = Llvm.Executionengine
 
 fun ty c = L.i32_type c
 
@@ -121,7 +121,7 @@ fun compile prog filename =
   let
       val (m, c, _) = mk_module prog
   in
-      if not (LlvmBitwriter.write_bitcode_file m filename) then ()
+      if not (Llvm.Bitwriter.write_bitcode_file m filename) then ()
       else (L.dispose_module m; L.dispose_context c)
   end
 
