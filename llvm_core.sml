@@ -1,4 +1,4 @@
-structure LlvmCoreInt =
+structure LlvmCore :> LLVM_CORE =
 struct
 
 infixr 0 $
@@ -2942,5 +2942,3 @@ fun dispose (PM : 'a t) : unit = F_llvm_passmanager_dispose.f' PM
 end
 
 end
-
-structure LlvmCore : LLVM_CORE = LlvmCoreInt

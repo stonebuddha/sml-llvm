@@ -1,10 +1,10 @@
-structure LlvmBitwriterInt =
+structure LlvmBitwriter :> LLVM_BITWRITER =
 struct
 
 infixr 0 $
 fun f $ x = f x
 
-structure Core = LlvmCoreInt
+structure Core = LlvmCore
 
 fun write_bitcode_file (M : Core.llmodule) (Path : string) : bool =
   let
@@ -32,5 +32,3 @@ fun output_bitcode (U : bool option) (S : BinIO.outstream) (M : Core.llmodule) :
       BinPrimIO.WR wr => write_bitcode_to_fd U M (Option.valOf $ Posix.FileSys.iodToFD $ Option.valOf $ #ioDesc wr)
 
 end
-
-structure LlvmBitwriter : LLVM_BITWRITER = LlvmBitwriterInt

@@ -15,9 +15,9 @@ val initialize : unit -> bool
 (** An execution engine is either a JIT compiler or an interpreter, capable of
     directly loading an LLVM module and executing its functions without first
     invoking a static compiler and generating a native executable. *)
-type llexecutionengine
+type llexecutionengine = (ST_LLVMOpaqueExecutionEngine.tag, C.rw) C.su_obj C.ptr'
 
-type llgenericvalue
+type llgenericvalue = (ST_LLVMOpaqueGenericValue.tag, C.rw) C.su_obj C.ptr'
 
 (** MCJIT compiler options. See [llvm::TargetOptions]. *)
 type llcompileroptions = {

@@ -13,34 +13,34 @@ sig
 
 (** The top-level container for all LLVM global data. See the
     [llvm::LLVMContext] class. *)
-type llcontext
+type llcontext = (ST_LLVMOpaqueContext.tag, C.rw) C.su_obj C.ptr'
 
 (** The top-level container for all other LLVM Intermediate Representation (IR)
     objects. See the [llvm::Module] class. *)
-type llmodule
+type llmodule = (ST_LLVMOpaqueModule.tag, C.rw) C.su_obj C.ptr'
 
 (** Each value in the LLVM IR has a type, an instance of [lltype]. See the
     [llvm::Type] class. *)
-type lltype
+type lltype = (ST_LLVMOpaqueType.tag, C.rw) C.su_obj C.ptr'
 
 (** Any value in the LLVM IR. Functions, instructions, global variables,
     constants, and much more are all [llvalues]. See the [llvm::Value] class.
     This type covers a wide range of subclasses. *)
-type llvalue
+type llvalue = (ST_LLVMOpaqueValue.tag, C.rw) C.su_obj C.ptr'
 
 (** Used to store users and usees of values. See the [llvm::Use] class. *)
-type lluse
+type lluse = (ST_LLVMOpaqueUse.tag, C.rw) C.su_obj C.ptr'
 
 (** A basic block in LLVM IR. See the [llvm::BasicBlock] class. *)
-type llbasicblock
+type llbasicblock = (ST_LLVMOpaqueBasicBlock.tag, C.rw) C.su_obj C.ptr'
 
 (** Used to generate instructions in the LLVM IR. See the [llvm::LLVMBuilder]
     class. *)
-type llbuilder
+type llbuilder = (ST_LLVMOpaqueBuilder.tag, C.rw) C.su_obj C.ptr'
 
 (** Used to efficiently handle large buffers of read-only binary data.
     See the [llvm::MemoryBuffer] class. *)
-type llmemorybuffer
+type llmemorybuffer = (ST_LLVMOpaqueMemoryBuffer.tag, C.rw) C.su_obj C.ptr'
 
 (** The kind of an [lltype], the result of [classify_type ty]. See the
     [llvm::Type::TypeID] enumeration. *)
@@ -2549,7 +2549,7 @@ structure PassManager :
               (**  *)
               type Module
               type Function
-              type 'a t
+              type 'a t = (ST_LLVMOpaquePassManager.tag, C.rw) C.su_obj C.ptr'
 
               (** [PassManager.create ()] constructs a new whole-module pass pipeline. This
                   type of pipeline is suitable for link-time optimization and whole-module

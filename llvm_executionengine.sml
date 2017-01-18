@@ -1,4 +1,4 @@
-structure LlvmExecutionengineInt =
+structure LlvmExecutionengine :> LLVM_EXECUTIONENGINE =
 struct
 
 infixr 0 $
@@ -18,8 +18,8 @@ fun dupPtrArr (arr : ('a C.ptr') array) : ('a C.ptr, C.rw) C.obj C.ptr' =
       buf
   end
 
-structure Core = LlvmCoreInt
-structure Target = LlvmTargetInt
+structure Core = LlvmCore
+structure Target = LlvmTarget
 
 val initialize : unit -> bool =
  fn () =>
@@ -136,5 +136,3 @@ val run_function : llexecutionengine -> Core.llvalue -> int -> llgenericvalue ar
     end
 
 end
-
-structure LlvmExecutionengine : LLVM_EXECUTIONENGINE = LlvmExecutionengineInt

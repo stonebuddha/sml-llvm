@@ -40,6 +40,8 @@ structure CodeModel :
                        | Kernel
                        | Medium
                        | Large
+
+              val toInt : t -> int
           end
 
 structure CodeGenFileType :
@@ -53,7 +55,7 @@ structure CodeGenFileType :
 
 structure DataLayout :
           sig
-              type t
+              type t = (ST_LLVMOpaqueTargetData.tag, C.rw) C.su_obj C.ptr'
 
               (** [of_string rep] parses the data layout string representation [rep].
                   See the constructor [llvm::DataLayout::DataLayout]. *)
@@ -131,7 +133,7 @@ structure DataLayout :
 
 structure Target :
           sig
-              type t
+              type t = (ST_LLVMTarget.tag, C.rw) C.su_obj C.ptr'
 
               (** [default_triple ()] returns the default target triple for current
                   platform. *)
@@ -178,7 +180,7 @@ structure Target :
 
 structure TargetMachine :
           sig
-              type t
+              type t = (ST_LLVMOpaqueTargetMachine.tag, C.rw) C.su_obj C.ptr'
 
               (** Creates a new target machine.
                   See [llvm::Target::createTargetMachine]. *)

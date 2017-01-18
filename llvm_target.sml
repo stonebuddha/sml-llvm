@@ -1,10 +1,10 @@
-structure LlvmTargetInt =
+structure LlvmTarget :> LLVM_TARGET =
 struct
 
 infixr 0 $
 fun f $ x = f x
 
-structure Core = LlvmCoreInt
+structure Core = LlvmCore
 
 structure Endian =
 struct
@@ -276,5 +276,3 @@ val emit_to_memory_buffer : Core.llmodule -> CodeGenFileType.t -> t -> Core.llme
 end
 
 end
-
-structure LlvmTarget : LLVM_TARGET = LlvmTargetInt
